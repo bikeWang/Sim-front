@@ -1,0 +1,134 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+}
+
+.loginCard {
+  width: 100%;
+  max-width: 480px;
+  padding: 40px;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.iconContainer {
+  width: 180px;
+  height: 180px;
+  margin: 0 auto 30px;
+  background: #f8f9fa;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.iconContainer::before,
+.iconContainer::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.iconContainer::before {
+  background: #4ade80;
+  top: 20px;
+  left: 0;
+}
+
+.iconContainer::after {
+  background: #60a5fa;
+  bottom: 30px;
+  right: 10px;
+}
+
+.iconContainer svg {
+  width: 80px;
+  height: 80px;
+  color: #64748b;
+}
+
+.title {
+  text-align: center;
+  color: #1e293b;
+  margin-bottom: 30px;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.loginCard :global(.ant-input-affix-wrapper) {
+  height: 50px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  margin-bottom: 16px;
+}
+
+.loginCard :global(.ant-input) {
+  background: transparent;
+  font-size: 15px;
+}
+
+.loginCard :global(.ant-input-password-icon),
+.loginCard :global(.ant-input-prefix) {
+  color: #94a3b8;
+  font-size: 18px;
+}
+
+.loginCard :global(.ant-btn) {
+  height: 50px;
+  border-radius: 10px;
+  background: #6366f1;
+  font-size: 16px;
+  font-weight: 500;
+  margin-top: 10px;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+.loginCard :global(.ant-btn:hover) {
+  background: #4f46e5;
+}
+
+.forgotPassword {
+  text-align: center;
+  margin-top: 20px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.createAccount {
+  text-align: center;
+  margin-top: 30px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.createAccount a {
+  color: #6366f1;
+  font-weight: 500;
+  margin-left: 5px;
+}
+
+@media (max-width: 480px) {
+  .loginCard {
+    margin: 20px;
+    padding: 30px 20px;
+  }
+
+  .iconContainer {
+    width: 140px;
+    height: 140px;
+    margin-bottom: 20px;
+  }
+
+  .iconContainer svg {
+    width: 60px;
+    height: 60px;
+  }
+}

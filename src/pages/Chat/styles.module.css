@@ -1,0 +1,265 @@
+.chatLayout {
+  height: 100vh;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 32px;
+}
+
+.sider {
+  background: #fff;
+  border-right: 1px solid #e2e8f0;
+  height: calc(100vh - 64px);
+  border-radius: 24px 0 0 24px;
+  overflow: hidden;
+}
+
+.siderHeader {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.groupInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+:global(.ant-dropdown-menu) {
+  border-radius: 16px;
+  padding: 8px;
+}
+
+:global(.ant-dropdown-menu-item) {
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+:global(.ant-dropdown-menu-item-danger) {
+  color: #ef4444;
+}
+
+:global(.ant-dropdown-menu-item-danger:hover) {
+  background-color: #fef2f2;
+  color: #ef4444;
+}
+
+.settingText {
+  cursor: pointer;
+}
+
+.contactList {
+  height: calc(100vh - 145px);
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.contactItem {
+  padding: 12px !important;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 16px;
+  margin-bottom: 4px;
+}
+
+.contactItem:hover {
+  background-color: #f1f5f9;
+}
+
+.selected {
+  background-color: #f1f5f9;
+}
+
+.contactInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.avatarWrapper {
+  position: relative;
+}
+
+.onlineStatus {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  background-color: #22c55e;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+.contactDetails {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex: 1;
+}
+
+.unreadBadge {
+  background-color: #6366f1;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.chatMain {
+  background: #fff;
+  border-radius: 0 24px 24px 0;
+  height: calc(100vh - 64px);
+}
+
+.chatHeader {
+  background: #fff;
+  padding: 16px 24px;
+  height: auto;
+  line-height: 1.5;
+  border-bottom: 1px solid #e2e8f0;
+  border-radius: 0 24px 0 0;
+}
+
+.selectedContactInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.contactMeta {
+  display: flex;
+  flex-direction: column;
+}
+
+.onlineText {
+  font-size: 12px;
+}
+
+.chatContent {
+  background: #fff;
+  padding: 24px;
+  overflow-y: auto;
+  height: calc(100% - 140px);
+}
+
+.messageList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.messageItem {
+  display: flex;
+  margin-bottom: 8px;
+}
+
+.messageContent {
+  max-width: 60%;
+  padding: 12px 16px;
+  border-radius: 20px;
+  position: relative;
+}
+
+.sent {
+  justify-content: flex-end;
+}
+
+.sent .messageContent {
+  background-color: #6366f1;
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.sent .messageContent :global(.ant-typography) {
+  color: #fff;
+}
+
+.received .messageContent {
+  background-color: #f1f5f9;
+  border-bottom-left-radius: 4px;
+}
+
+.timestamp {
+  font-size: 12px;
+  margin-top: 4px;
+  display: block;
+  opacity: 0.7;
+}
+
+.inputArea {
+  background: #fff;
+  padding: 16px 24px;
+  display: flex;
+  gap: 16px;
+  border-top: 1px solid #e2e8f0;
+  border-radius: 0 0 24px 0;
+}
+
+.messageInput {
+  flex: 1;
+  border-radius: 16px;
+  background: #f1f5f9;
+  border: none;
+  padding: 12px 16px;
+}
+
+.messageInput:focus {
+  background: #f8fafc;
+  box-shadow: none;
+}
+
+.sendButton {
+  border-radius: 50%;
+  background: #6366f1;
+  border: none;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sendButton:hover {
+  background: #4f46e5;
+}
+
+@media (max-width: 768px) {
+  .chatLayout {
+    padding: 0;
+  }
+
+  .sider {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+    position: fixed;
+    z-index: 1;
+    display: none;
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  .chatMain {
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  .chatHeader {
+    border-radius: 0;
+  }
+
+  .inputArea {
+    border-radius: 0;
+  }
+
+  .messageContent {
+    max-width: 80%;
+  }
+}
