@@ -43,6 +43,7 @@ const Chat: React.FC = () => {
   const [messageInput, setMessageInput] = useState('');
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [createGroupModalVisible, setCreateGroupModalVisible] = useState(false);
+  const [searchText, setSearchText] = useState('');
 
   // 模拟通知数据
   const [notifications] = useState([
@@ -162,6 +163,8 @@ const Chat: React.FC = () => {
               prefix={<SearchOutlined style={{ color: '#6366f1' }} />}
               placeholder="搜索联系人"
               className={styles.searchInput}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
             />
             <Dropdown
               menu={{
@@ -192,7 +195,9 @@ const Chat: React.FC = () => {
           </div>
           <List
             className={styles.contactList}
-            dataSource={contacts}
+            dataSource={contacts.filter(contact =>
+              contact.name.toLowerCase().includes(searchText.toLowerCase())
+            )}
             renderItem={(contact) => (
               <List.Item
                 onClick={() => setSelectedContact(contact)}
@@ -204,8 +209,13 @@ const Chat: React.FC = () => {
                     {contact.online && <div className={styles.onlineStatus} />}
                   </div>
                   <div className={styles.contactDetails}>
+                    <div className={styles.nameContainer}>
                     <Text strong>{contact.name}</Text>
-                    {contact.unread > 0 && (
+                    <span className={`${styles.typeTag} ${contact.type === 'personal' ? styles.personalTag : styles.groupTag}`}>
+                      {contact.type === 'personal' ? 'P' : 'G'}
+                    </span>
+                  </div>
+                  {contact.unread > 0 && (
                       <span className={styles.unreadBadge}>{contact.unread}</span>
                     )}
                   </div>
