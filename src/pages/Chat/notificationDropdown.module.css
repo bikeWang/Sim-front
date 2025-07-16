@@ -1,0 +1,122 @@
+.notificationContainer {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  width: 320px;
+  max-height: 480px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.notificationSection {
+  margin-bottom: 16px;
+}
+
+.notificationSection:last-child {
+  margin-bottom: 0;
+}
+
+.sectionHeader {
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 4px;
+}
+
+.sectionHeader :global(.anticon) {
+  color: #6366f1;
+}
+
+.notificationItem {
+  padding: 12px !important;
+  border-radius: 8px !important;
+  transition: background-color 0.3s ease;
+}
+
+.notificationItem:hover {
+  background-color: #f3f4f6;
+}
+
+.notificationContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.timestamp {
+  font-size: 12px;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.actionButtons a {
+  color: #6366f1;
+  font-size: 14px;
+  transition: opacity 0.3s ease;
+}
+
+.actionButtons a:hover {
+  opacity: 0.8;
+}
+
+.actionButtons a:last-child {
+  color: #ef4444;
+}
+
+.emptyState {
+  padding: 24px;
+  text-align: center;
+}
+
+.notificationBadge {
+  cursor: pointer;
+}
+
+.bellIcon {
+  font-size: 20px;
+  color: #6b7280;
+  transition: color 0.3s ease;
+}
+
+.bellIcon:hover {
+  color: #374151;
+}
+
+.animate {
+  animation: bellShake 1s cubic-bezier(.36,.07,.19,.97) infinite;
+  transform-origin: top;
+}
+
+@keyframes bellShake {
+  0% { transform: rotate(0); }
+  15% { transform: rotate(5deg); }
+  30% { transform: rotate(-5deg); }
+  45% { transform: rotate(4deg); }
+  60% { transform: rotate(-4deg); }
+  75% { transform: rotate(2deg); }
+  85% { transform: rotate(-2deg); }
+  92% { transform: rotate(1deg); }
+  100% { transform: rotate(0); }
+}
+
+:global(.ant-badge-dot) {
+  background: #ef4444;
+  box-shadow: 0 0 0 2px #ef4444;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}

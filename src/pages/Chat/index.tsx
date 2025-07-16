@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Layout, List, Input, Button, Avatar, Typography, Dropdown } from 'antd';
+import { Layout, List, Input, Button, Avatar, Typography, Dropdown, Space } from 'antd';
+import EmojiPicker from './EmojiPicker';
+import NotificationDropdown from './NotificationDropdown';
 import SearchModal from './SearchModal';
 import CreateGroupModal from './CreateGroupModal';
 import { SendOutlined, UserOutlined, SettingOutlined, LogoutOutlined, SearchOutlined, PlusOutlined, UserAddOutlined, TeamOutlined } from '@ant-design/icons';
@@ -36,6 +38,32 @@ const Chat: React.FC = () => {
   const [messageInput, setMessageInput] = useState('');
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [createGroupModalVisible, setCreateGroupModalVisible] = useState(false);
+
+  // 模拟通知数据
+  const [notifications] = useState([
+    {
+      id: 1,
+      type: 'friend' as const,
+      title: '张三',
+      description: '请求添加你为好友',
+      timestamp: '10:30'
+    },
+    {
+      id: 2,
+      type: 'group' as const,
+      title: '前端交流群',
+      description: '邀请你加入群聊',
+      timestamp: '11:45'
+    }
+  ]);
+
+  const handleAcceptRequest = (id: number, type: 'friend' | 'group') => {
+    console.log(`接受${type === 'friend' ? '好友' : '群聊'}请求:`, id);
+  };
+
+  const handleRejectRequest = (id: number, type: 'friend' | 'group') => {
+    console.log(`拒绝${type === 'friend' ? '好友' : '群聊'}请求:`, id);
+  };
 
   // 模拟联系人数据
   const contacts: Contact[] = [
@@ -114,7 +142,11 @@ const Chat: React.FC = () => {
               </Dropdown>
               <Text strong>Chat Group</Text>
             </div>
-            <Text type="secondary" className={styles.settingText}>Setting</Text>
+            <NotificationDropdown
+                notifications={notifications}
+                onAccept={handleAcceptRequest}
+                onReject={handleRejectRequest}
+              />
           </div>
           <div className={styles.searchBox}>
             <Input
@@ -203,14 +235,19 @@ const Chat: React.FC = () => {
             </div>
           </Content>
           <div className={styles.inputArea}>
-            <Input
-              value={messageInput}
-              onChange={(e) => setMessageInput(e.target.value)}
-              onPressEnter={handleSend}
-              placeholder="Demo"
-              disabled={!selectedContact}
-              className={styles.messageInput}
-            />
+            <Space.Compact style={{ flex: 1 }}>
+              <EmojiPicker
+                onEmojiSelect={(emoji) => setMessageInput(messageInput + emoji)}
+              />
+              <Input
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                onPressEnter={handleSend}
+                placeholder="Demo"
+                disabled={!selectedContact}
+                className={styles.messageInput}
+              />
+            </Space.Compact>
             <Button
               type="primary"
               icon={<SendOutlined />}
