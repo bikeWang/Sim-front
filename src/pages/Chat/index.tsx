@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Layout, List, Input, Button, Avatar, Typography, Dropdown } from 'antd';
-import { SendOutlined, UserOutlined, SettingOutlined, LogoutOutlined } from '@ant-design/icons';
+import { SendOutlined, UserOutlined, SettingOutlined, LogoutOutlined, SearchOutlined, PlusOutlined, UserAddOutlined, TeamOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { logout } from '../../store/userSlice';
@@ -111,6 +111,37 @@ const Chat: React.FC = () => {
               <Text strong>Chat Group</Text>
             </div>
             <Text type="secondary" className={styles.settingText}>Setting</Text>
+          </div>
+          <div className={styles.searchBox}>
+            <Input
+              prefix={<SearchOutlined style={{ color: '#6366f1' }} />}
+              placeholder="搜索联系人"
+              className={styles.searchInput}
+            />
+            <Dropdown
+              menu={{
+                items: [
+                  {
+                    key: 'addFriend',
+                    icon: <UserAddOutlined />,
+                    label: '添加好友'
+                  },
+                  {
+                    key: 'addGroup',
+                    icon: <TeamOutlined />,
+                    label: '创建/加入群聊'
+                  }
+                ]
+              }}
+              placement="bottomRight"
+              trigger={['click']}
+            >
+              <Button
+                type="text"
+                icon={<PlusOutlined style={{ color: '#6366f1' }} />}
+                className={styles.addButton}
+              />
+            </Dropdown>
           </div>
           <List
             className={styles.contactList}
