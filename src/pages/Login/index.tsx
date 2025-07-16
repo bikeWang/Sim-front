@@ -56,7 +56,7 @@ const Login: React.FC = () => {
         <div className={styles.iconContainer}>
           <LaptopOutlined />
         </div>
-        <h1 className={styles.title}></h1>
+        <h1 className={styles.title}>简聊</h1>
         <Form
           name="login"
           onFinish={onFinish}
@@ -101,7 +101,7 @@ const Login: React.FC = () => {
         </div>
 
         <div className={styles.createAccount}>
-          Don't have an account?<Link to="/register">Create your Account</Link>
+          没有账户?<Link to="/register">点击这里！快速创建自己的账户！</Link>
         </div>
       </div>
     </div>

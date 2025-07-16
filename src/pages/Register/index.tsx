@@ -50,7 +50,7 @@ const Register: React.FC = () => {
         <div className={styles.iconContainer}>
           <LaptopOutlined />
         </div>
-        <h1 className={styles.title}>Create Account</h1>
+        <h1 className={styles.title}>创建账户</h1>
         <Form
           name="register"
           onFinish={onFinish}
@@ -122,7 +122,7 @@ const Register: React.FC = () => {
         </Form>
 
         <div className={styles.createAccount}>
-          Already have an account?<a href="/">Sign In</a>
+          已有账户?<a href="/">点击这里去登录！</a>
         </div>
       </div>
     </div>
