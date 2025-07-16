@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Layout, List, Input, Button, Avatar, Typography, Dropdown } from 'antd';
 import SearchModal from './SearchModal';
+import CreateGroupModal from './CreateGroupModal';
 import { SendOutlined, UserOutlined, SettingOutlined, LogoutOutlined, SearchOutlined, PlusOutlined, UserAddOutlined, TeamOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
@@ -34,6 +35,7 @@ const Chat: React.FC = () => {
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [messageInput, setMessageInput] = useState('');
   const [searchModalVisible, setSearchModalVisible] = useState(false);
+  const [createGroupModalVisible, setCreateGroupModalVisible] = useState(false);
 
   // 模拟联系人数据
   const contacts: Contact[] = [
@@ -126,14 +128,14 @@ const Chat: React.FC = () => {
                   {
                     key: 'addFriend',
                     icon: <UserAddOutlined />,
-                    label: '添加好友',
+                    label: '添加好友/群聊',
                     onClick: () => setSearchModalVisible(true)
                   },
                   {
                     key: 'addGroup',
                     icon: <TeamOutlined />,
-                    label: '创建/加入群聊',
-                    onClick: () => setSearchModalVisible(true)
+                    label: '创建群聊',
+                    onClick: () => setCreateGroupModalVisible(true)
                   }
                 ]
               }}
@@ -222,6 +224,10 @@ const Chat: React.FC = () => {
       <SearchModal
         visible={searchModalVisible}
         onClose={() => setSearchModalVisible(false)}
+      />
+      <CreateGroupModal
+        visible={createGroupModalVisible}
+        onClose={() => setCreateGroupModalVisible(false)}
       />
     </Layout>
   );

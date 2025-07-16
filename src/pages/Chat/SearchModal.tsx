@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Input, Typography, List, Avatar, Empty } from 'antd';
+import { Input, Typography, List, Avatar, Empty, Button } from 'antd';
 import { SearchOutlined, UserOutlined, TeamOutlined, CloseOutlined } from '@ant-design/icons';
 import styles from './searchModal.module.css';
 
@@ -70,8 +70,17 @@ const SearchModal: React.FC<SearchModalProps> = ({ visible, onClose }) => {
                 dataSource={users}
                 renderItem={item => (
                   <List.Item className={styles.resultItem}>
-                    <Avatar icon={<UserOutlined />} />
-                    <Text>{item.name}</Text>
+                    <div className={styles.resultInfo}>
+                      <Avatar icon={<UserOutlined />} />
+                      <Text>{item.name}</Text>
+                    </div>
+                    <Button
+                      type="primary"
+                      size="small"
+                      className={styles.addButton}
+                    >
+                      添加好友
+                    </Button>
                   </List.Item>
                 )}
               />
@@ -95,8 +104,17 @@ const SearchModal: React.FC<SearchModalProps> = ({ visible, onClose }) => {
                 dataSource={groups}
                 renderItem={item => (
                   <List.Item className={styles.resultItem}>
-                    <Avatar icon={<TeamOutlined />} />
-                    <Text>{item.name}</Text>
+                    <div className={styles.resultInfo}>
+                      <Avatar icon={<TeamOutlined />} />
+                      <Text>{item.name}</Text>
+                    </div>
+                    <Button
+                      type="primary"
+                      size="small"
+                      className={styles.addButton}
+                    >
+                      加入群聊
+                    </Button>
                   </List.Item>
                 )}
               />
