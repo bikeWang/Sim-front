@@ -27,6 +27,10 @@ const Login: React.FC = () => {
         message.success({
           content: '登录成功！欢迎回来～',
           className: 'custom-message',
+          duration: 2,
+          style: {
+            marginTop: '20vh',
+          },
         });
         navigate('/chat');
       } else {
@@ -36,6 +40,10 @@ const Login: React.FC = () => {
       message.error({
         content: '登录失败：' + (error instanceof Error ? error.message : '未知错误'),
         className: 'custom-message',
+        duration: 3,
+        style: {
+          marginTop: '20vh',
+        },
       });
     } finally {
       setLoading(false);

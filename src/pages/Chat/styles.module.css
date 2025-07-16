@@ -166,11 +166,34 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  position: relative;
+  width: 100%;
 }
 
 .contactMeta {
   display: flex;
   flex-direction: column;
+  flex: 1;
+}
+
+.moreButton {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  font-weight: bold;
+  padding: 4px 8px;
+  height: auto;
+  line-height: 1;
+  border-radius: 8px;
+  color: #666;
+  transition: all 0.3s ease;
+}
+
+.moreButton:hover {
+  background-color: #f1f5f9;
+  color: #333;
 }
 
 .onlineText {

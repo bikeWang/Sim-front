@@ -34,25 +34,56 @@ body {
 /* 自定义消息提示样式 */
 .custom-message {
   border-radius: 8px !important;
-  padding: 12px 20px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-  backdrop-filter: blur(10px) !important;
-  background: rgba(255, 255, 255, 0.9) !important;
+  padding: 12px 16px !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08) !important;
+  backdrop-filter: blur(8px) !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  transform: translateY(-50%) !important;
+  animation: messageSlideIn 0.3s ease-out !important;
+  max-width: 400px !important;
+  width: 90% !important;
+  margin: 0 auto !important;
+}
+
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-70%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%);
+  }
 }
 
 .custom-message .ant-message-notice-content {
   background: transparent !important;
   box-shadow: none !important;
   padding: 0 !important;
+  width: 100% !important;
 }
 
 .custom-message .anticon {
-  font-size: 18px !important;
+  font-size: 16px !important;
   margin-right: 8px !important;
 }
 
+.custom-message .anticon-check-circle {
+  color: #52c41a !important;
+}
+
+.custom-message .anticon-close-circle {
+  color: #ff4d4f !important;
+}
+
 .custom-message .ant-message-custom-content {
-  font-size: 15px !important;
+  font-size: 14px !important;
   display: flex !important;
   align-items: center !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.2px !important;
+  justify-content: center !important;
+  text-align: center !important;
+  line-height: 1.5 !important;
 }

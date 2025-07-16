@@ -1,0 +1,101 @@
+.drawer :global(.ant-drawer-content-wrapper) {
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+}
+
+.drawer :global(.ant-drawer-header) {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.avatar {
+  margin-bottom: 12px;
+}
+
+.name {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: #333;
+}
+
+.personalInfo,
+.groupInfo {
+  padding: 20px 0;
+  flex-grow: 1;
+}
+
+.infoItem {
+  margin-bottom: 16px;
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  color: #666;
+  font-size: 14px;
+}
+
+.value {
+  color: #333;
+  font-size: 14px;
+}
+
+.noteInput {
+  width: 100%;
+}
+
+.membersTitle {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: #333;
+}
+
+.membersList {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.memberItem {
+  padding: 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.memberName {
+  font-size: 14px;
+  color: #333;
+}
+
+.deleteButton {
+  margin-top: auto;
+  width: 100%;
+}
+
+:global(.ant-modal-confirm.deleteModal) {
+  max-width: 400px;
+}
+
+:global(.ant-modal-confirm.deleteModal .ant-modal-confirm-title) {
+  color: #ff4d4f;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+:global(.ant-modal-confirm.deleteModal .ant-modal-confirm-content) {
+  font-size: 16px;
+  margin-top: 16px;
+}

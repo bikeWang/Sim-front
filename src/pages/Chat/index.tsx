@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Layout, List, Input, Button, Avatar, Typography, Dropdown, Space } from 'antd';
 import EmojiPicker from './EmojiPicker';
+import DetailDrawer from './DetailDrawer';
 import NotificationDropdown from './NotificationDropdown';
 import SearchModal from './SearchModal';
 import CreateGroupModal from './CreateGroupModal';
@@ -25,6 +26,9 @@ interface Contact {
   lastMessage: string;
   unread: number;
   online?: boolean;
+  type: 'personal' | 'group';
+  phone?: string;
+  members?: { id: string; name: string }[];
 }
 
 const { Header, Sider, Content } = Layout;
@@ -35,6 +39,7 @@ const Chat: React.FC = () => {
   const dispatch = useDispatch();
   const username = useSelector((state: RootState) => state.user.username);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [detailDrawerVisible, setDetailDrawerVisible] = useState(false);
   const [messageInput, setMessageInput] = useState('');
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [createGroupModalVisible, setCreateGroupModalVisible] = useState(false);
@@ -67,10 +72,14 @@ const Chat: React.FC = () => {
 
   // 模拟联系人数据
   const contacts: Contact[] = [
-    { id: 1, name: '未凉', lastMessage: '好的，明天见！', unread: 2, online: true },
-    { id: 2, name: '海阔', lastMessage: '有人在吗？', unread: 0, online: true },
-    { id: 3, name: '天空', lastMessage: '收到了吗？', unread: 1, online: false },
-    { id: 4, name: '海图', lastMessage: '晚安！', unread: 0, online: false },
+    { id: 1, name: '未凉', lastMessage: '好的，明天见！', unread: 2, online: true, type: 'personal', phone: '13800138000' },
+    { id: 2, name: '海阔', lastMessage: '有人在吗？', unread: 0, online: true, type: 'personal', phone: '13800138001' },
+    { id: 3, name: '天空', lastMessage: '收到了吗？', unread: 1, online: false, type: 'group', members: [
+      { id: '1', name: '天空' },
+      { id: '2', name: '未凉' },
+      { id: '3', name: '海阔' },
+    ] },
+    { id: 4, name: '海图', lastMessage: '晚安！', unread: 0, online: false, type: 'personal', phone: '13800138002' },
   ];
 
   // 模拟消息数据
@@ -138,7 +147,7 @@ const Chat: React.FC = () => {
                 placement="bottomLeft"
                 trigger={['click']}
               >
-                <Avatar size={36} style={{ backgroundColor: '#6366f1', cursor: 'pointer' }}>{username[0].toUpperCase()}</Avatar>
+                <Avatar size={36} style={{ backgroundColor: '#6366f1', cursor: 'pointer' }}>{username ? username[0].toUpperCase() : 'U'}</Avatar>
               </Dropdown>
               <Text strong>Chat Group</Text>
             </div>
@@ -214,6 +223,13 @@ const Chat: React.FC = () => {
                   <Text strong>{selectedContact.name}</Text>
                   {selectedContact.online && <Text type="secondary" className={styles.onlineText}>online</Text>}
                 </div>
+                <Button
+                  type="text"
+                  className={styles.moreButton}
+                  onClick={() => setDetailDrawerVisible(true)}
+                >
+                  •••
+                </Button>
               </div>
             )}
           </Header>
@@ -265,6 +281,14 @@ const Chat: React.FC = () => {
       <CreateGroupModal
         visible={createGroupModalVisible}
         onClose={() => setCreateGroupModalVisible(false)}
+      />
+      <DetailDrawer
+        visible={detailDrawerVisible}
+        onClose={() => setDetailDrawerVisible(false)}
+        contact={selectedContact ? {
+          ...selectedContact,
+          id: String(selectedContact.id) // 将number类型的id转换为string类型
+        } : null}
       />
     </Layout>
   );

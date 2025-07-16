@@ -35,6 +35,10 @@ const Profile: React.FC = () => {
       message.success({
         content: '个人信息更新成功！',
         className: 'custom-message',
+        duration: 2,
+        style: {
+          marginTop: '20vh'
+        }
       });
       setTimeout(() => {
         navigate('/chat');
@@ -43,6 +47,10 @@ const Profile: React.FC = () => {
       message.error({
         content: '更新失败：' + (error instanceof Error ? error.message : '未知错误'),
         className: 'custom-message',
+        duration: 3,
+        style: {
+          marginTop: '20vh'
+        }
       });
     } finally {
       setLoading(false);
