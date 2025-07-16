@@ -5,7 +5,7 @@ import DetailDrawer from './DetailDrawer';
 import NotificationDropdown from './NotificationDropdown';
 import SearchModal from './SearchModal';
 import CreateGroupModal from './CreateGroupModal';
-import { SendOutlined, UserOutlined, SettingOutlined, LogoutOutlined, SearchOutlined, PlusOutlined, UserAddOutlined, TeamOutlined } from '@ant-design/icons';
+import { SendOutlined, UserOutlined, SettingOutlined, LogoutOutlined, SearchOutlined, PlusOutlined, UserAddOutlined, TeamOutlined, RobotOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { logout } from '../../store/userSlice';
@@ -73,6 +73,7 @@ const Chat: React.FC = () => {
 
   // 模拟联系人数据
   const contacts: Contact[] = [
+    { id: 0, name: 'AI助手', lastMessage: '有什么我可以帮你的吗？', unread: 0, online: true, type: 'personal', phone: 'ai-assistant' },
     { id: 1, name: '未凉', lastMessage: '好的，明天见！', unread: 2, online: true, type: 'personal', phone: '13800138000' },
     { id: 2, name: '海阔', lastMessage: '有人在吗？', unread: 0, online: true, type: 'personal', phone: '13800138001' },
     { id: 3, name: '天空', lastMessage: '收到了吗？', unread: 1, online: false, type: 'group', members: [
@@ -205,7 +206,7 @@ const Chat: React.FC = () => {
               >
                 <div className={styles.contactInfo}>
                   <div className={styles.avatarWrapper}>
-                    <Avatar icon={<UserOutlined />} />
+                    <Avatar icon={contact.id === 0 ? <RobotOutlined /> : <UserOutlined />} style={contact.id === 0 ? { backgroundColor: '#6366f1' } : undefined} />
                     {contact.online && <div className={styles.onlineStatus} />}
                   </div>
                   <div className={styles.contactDetails}>

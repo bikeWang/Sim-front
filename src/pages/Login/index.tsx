@@ -7,11 +7,12 @@ import { login } from '../../store/userSlice';
 import styles from './styles.module.css';
 
 interface LoginForm {
-  username: string;
+  phone: string;
   password: string;
 }
 
 const Login: React.FC = () => {
+  //跳转
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
@@ -19,23 +20,16 @@ const Login: React.FC = () => {
   const onFinish = async (values: LoginForm) => {
     setLoading(true);
     try {
-      // 模拟API请求延迟
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      if (values.password === '123456') {
-        dispatch(login(values.username));
-        message.success({
-          content: '登录成功！欢迎回来～',
-          className: 'custom-message',
-          duration: 2,
-          style: {
-            marginTop: '20vh',
-          },
-        });
-        navigate('/chat');
-      } else {
-        throw new Error('密码错误');
-      }
+      // 使用fetch从测试API获取是否登录
+      const response = await fetch('/api/test/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phone: values.phone, password: values.password }),
+      });
+      const data = await response.json();
+      console.log(data);
     } catch (error) {
       message.error({
         content: '登录失败：' + (error instanceof Error ? error.message : '未知错误'),
@@ -63,12 +57,12 @@ const Login: React.FC = () => {
           autoComplete="off"
         >
           <Form.Item
-            name="username"
-            rules={[{ required: true, message: '请输入用户名！' }]}
+            name="phone"
+            rules={[{ required: true, message: '请输入手机号！' }]}
           >
             <Input
               prefix={<UserOutlined />}
-              placeholder="Email"
+              placeholder="手机号"
               autoComplete="off"
             />
           </Form.Item>
