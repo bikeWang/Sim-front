@@ -26,6 +26,7 @@ const Login: React.FC = () => {
         body: JSON.stringify(values),
       });
       const data = await response.json();
+      console.log(data);
       if (data.code === 200) {
         message.success({
           content: '登录成功！',
