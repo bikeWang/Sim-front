@@ -39,6 +39,7 @@ const Login: React.FC = () => {
         localStorage.setItem('refreshToken', data.data.refreshToken);
         localStorage.setItem('userName', data.data.userName);
         localStorage.setItem('userId', data.data.userId);
+        console.log(localStorage.getItem('userId'));
         navigate('/chat');
       }
     } catch (error) {

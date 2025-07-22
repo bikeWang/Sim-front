@@ -44,11 +44,12 @@ export const useWebSocket = () => {
 
     socket.onopen = () => {
       //fetch发送注册登陆消息，上线
+
       const userId=localStorage.getItem('userId');
       let data={
         action:1,
         chatMsg:{
-          senderId:userId,
+          senderId: userId,
         }
       }
       socket.send(JSON.stringify(data));

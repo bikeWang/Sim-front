@@ -15,12 +15,6 @@ import type { RootState } from '../../store';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import styles from './styles.module.css';
 
-interface Message {
-  id: number;
-  sender: string;
-  content: string;
-  timestamp: string;
-}
 
 interface Contact {
   id: number;
