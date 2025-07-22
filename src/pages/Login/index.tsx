@@ -16,7 +16,6 @@ const Login: React.FC = () => {
   const { message } = App.useApp();
 
   const onFinish = async (values: LoginForm) => {
-    console.log(values);
     setLoading(true);
     try {
       // 使用fetch从测试API获取是否登录
@@ -37,10 +36,8 @@ const Login: React.FC = () => {
         //跳转到聊天页面，local本地保存双token
         localStorage.setItem('accessToken', data.data.token);
         localStorage.setItem('refreshToken', data.data.refreshToken);
-        localStorage.setItem('userName', data.data.userName);
-        localStorage.setItem('userId', data.data.userId);
-        console.log(localStorage.getItem('userId'));
-        navigate('/chat');
+        console.log(localStorage.getItem('accessToken'));
+        console.log(localStorage.getItem('refreshToken'));
       }
     } catch (error) {
       message.error({
