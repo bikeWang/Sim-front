@@ -1,5 +1,5 @@
 import React from 'react';
-import { Popover, Tabs, Space } from 'antd';
+import { Popover, Tabs } from 'antd';
 import { SmileOutlined } from '@ant-design/icons';
 import styles from './emojiPicker.module.css';
 

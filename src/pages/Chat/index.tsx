@@ -5,7 +5,7 @@ import DetailDrawer from './DetailDrawer';
 import NotificationDropdown from './NotificationDropdown';
 import SearchModal from './SearchModal';
 import CreateGroupModal from './CreateGroupModal';
-import { SendOutlined, UserOutlined, SettingOutlined, LogoutOutlined, SearchOutlined, PlusOutlined, UserAddOutlined, TeamOutlined, RobotOutlined } from '@ant-design/icons';
+import { SendOutlined, UserOutlined, LogoutOutlined, SearchOutlined, PlusOutlined, UserAddOutlined, TeamOutlined, RobotOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { logout } from '../../store/userSlice';
@@ -45,7 +45,7 @@ const Chat: React.FC = () => {
   const [createGroupModalVisible, setCreateGroupModalVisible] = useState(false);
   const [searchText, setSearchText] = useState('');
 
-  // 模拟通知数据
+  // TODO: 从后端获取通知数据，逻辑为登录get该接口从数据库获取请求，处理后根据选择更新视图模型和后端数据关系
   const [notifications] = useState([
     {
       id: 1,

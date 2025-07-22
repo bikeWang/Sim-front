@@ -26,7 +26,7 @@ const Profile: React.FC = () => {
     phone: '1234567890'
   };
 
-  const onFinish = async (values: UserProfile) => {
+  const onFinish = async (_values: UserProfile) => {
     setLoading(true);
     try {
       // 模拟API请求延迟

@@ -1,35 +1,46 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, message } from 'antd';
+import { Form, Input, Button, App } from 'antd';
 import { UserOutlined, LockOutlined, LaptopOutlined } from '@ant-design/icons';
-import { useNavigate, Link } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { login } from '../../store/userSlice';
+import { Link, useNavigate } from 'react-router-dom';
+
 import styles from './styles.module.css';
 
 interface LoginForm {
-  phone: string;
+  userName: string;
   password: string;
 }
 
 const Login: React.FC = () => {
-  //跳转
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { message } = App.useApp();
 
   const onFinish = async (values: LoginForm) => {
+    console.log(values);
     setLoading(true);
     try {
       // 使用fetch从测试API获取是否登录
-      const response = await fetch('/api/test/login', {
+      const response = await fetch('/api/user-info/user/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ phone: values.phone, password: values.password }),
+        body: JSON.stringify(values),
       });
       const data = await response.json();
-      console.log(data);
+      if (data.code === 200) {
+        message.success({
+          content: '登录成功！',
+          className: 'custom-message',
+          duration: 3,
+        });
+        //跳转到聊天页面，local本地保存双token
+        localStorage.setItem('accessToken', data.data.token);
+        localStorage.setItem('refreshToken', data.data.refreshToken);
+        localStorage.setItem('userName', data.data.userName);
+        localStorage.setItem('userId', data.data.userId);
+        navigate('/chat');
+      }
     } catch (error) {
       message.error({
         content: '登录失败：' + (error instanceof Error ? error.message : '未知错误'),
@@ -57,12 +68,12 @@ const Login: React.FC = () => {
           autoComplete="off"
         >
           <Form.Item
-            name="phone"
-            rules={[{ required: true, message: '请输入手机号！' }]}
+            name="userName"
+            rules={[{ required: true, message: '请输入用户名！' }]}
           >
             <Input
               prefix={<UserOutlined />}
-              placeholder="手机号"
+              placeholder="用户名"
               autoComplete="off"
             />
           </Form.Item>
