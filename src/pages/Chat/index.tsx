@@ -5,6 +5,7 @@ import DetailDrawer from './DetailDrawer';
 import NotificationDropdown from './NotificationDropdown';
 import SearchModal from './SearchModal';
 import CreateGroupModal from './CreateGroupModal';
+import ProfileModal from './ProfileModal';
 import { SendOutlined, UserOutlined, LogoutOutlined, SearchOutlined, PlusOutlined, UserAddOutlined, TeamOutlined, RobotOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
@@ -14,7 +15,12 @@ import type { RootState } from '../../store';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import styles from './styles.module.css';
 
-
+interface Message {
+  id: number;
+  sender: string;
+  content: string;
+  timestamp: string;
+}
 
 interface Contact {
   id: number;
@@ -39,6 +45,7 @@ const Chat: React.FC = () => {
   const [messageInput, setMessageInput] = useState('');
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [createGroupModalVisible, setCreateGroupModalVisible] = useState(false);
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [searchText, setSearchText] = useState('');
 
   // 使用WebSocket hook
@@ -78,7 +85,7 @@ const Chat: React.FC = () => {
                       key: 'profile',
                       icon: <UserOutlined />,
                       label: '个人信息',
-                      onClick: () => navigate('/profile')
+                      onClick: () => setProfileModalVisible(true)
                     },
                     {
                       key: 'logout',
@@ -246,6 +253,11 @@ const Chat: React.FC = () => {
           ...selectedContact,
           id: String(selectedContact.id)
         } : null}
+      />
+      <ProfileModal
+        visible={profileModalVisible}
+        onClose={() => setProfileModalVisible(false)}
+        username={username}
       />
     </Layout>
   );
