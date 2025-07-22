@@ -43,6 +43,7 @@ export const useWebSocket = () => {
     const socket = new WebSocket(`${WS_URL}`);
 
     socket.onopen = () => {
+      setIsConnected(true);
       //fetch发送注册登陆消息，上线
       const userId=localStorage.getItem('userId');
       const data={
@@ -52,7 +53,6 @@ export const useWebSocket = () => {
         }
       }
       socket.send(JSON.stringify(data));
-      setIsConnected(true);
       message.success('已连接到聊天服务器');
     };
     //接收到消息
@@ -120,7 +120,9 @@ export const useWebSocket = () => {
 
   // 初始化WebSocket连接
   useEffect(() => {
+      if (!isConnected) {
     connect();
+  }
     return () => disconnect();
   }, [connect, disconnect]);
 
