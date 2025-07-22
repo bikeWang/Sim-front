@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, App } from 'antd';
 import { UserOutlined, LockOutlined, LaptopOutlined } from '@ant-design/icons';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 import styles from './styles.module.css';
 
@@ -12,7 +12,6 @@ interface LoginForm {
 
 const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
   const { message } = App.useApp();
 
   const onFinish = async (values: LoginForm) => {
@@ -34,7 +33,7 @@ const Login: React.FC = () => {
           duration: 3,
         });
         //跳转到聊天页面，local本地保存双token
-        localStorage.setItem('accessToken', data.data.token);
+        localStorage.setItem('accessToken', data.data.accessToken);
         localStorage.setItem('refreshToken', data.data.refreshToken);
         console.log(localStorage.getItem('accessToken'));
         console.log(localStorage.getItem('refreshToken'));
