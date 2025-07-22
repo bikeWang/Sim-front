@@ -37,15 +37,23 @@ export const useWebSocket = () => {
     if (!token) {
       message.error('未登录');
       //重新登录，定向到登录页面
-      return;
+      
     }
 
     const socket = new WebSocket(`${WS_URL}`);
 
     socket.onopen = () => {
+      //fetch发送注册登陆消息，上线
+      const userId=localStorage.getItem('userId');
+      let data={
+        action:1,
+        chatMsg:{
+          senderId:userId,
+        }
+      }
+      socket.send(JSON.stringify(data));
       setIsConnected(true);
       message.success('已连接到聊天服务器');
-      //fetch发送注册登陆消息，上线
     };
     //接收到消息
     socket.onmessage = (event) => {
@@ -72,6 +80,8 @@ export const useWebSocket = () => {
       message.warning('与聊天服务器断开连接');
       // 尝试重新连接
       setTimeout(connect, 3000);
+      //下线,删除localStorage
+      //向后端发送logout请求
     };
 
     socket.onerror = (error) => {
