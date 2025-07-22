@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout, List, Input, Button, Avatar, Typography, Dropdown, Space } from 'antd';
 import EmojiPicker from './EmojiPicker';
 import DetailDrawer from './DetailDrawer';
@@ -11,14 +11,10 @@ import { useDispatch } from 'react-redux';
 import { logout } from '../../store/userSlice';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
+import { useWebSocket } from '../../hooks/useWebSocket';
 import styles from './styles.module.css';
 
-interface Message {
-  id: number;
-  sender: string;
-  content: string;
-  timestamp: string;
-}
+
 
 interface Contact {
   id: number;
@@ -45,23 +41,14 @@ const Chat: React.FC = () => {
   const [createGroupModalVisible, setCreateGroupModalVisible] = useState(false);
   const [searchText, setSearchText] = useState('');
 
-  // TODO: 从后端获取通知数据，逻辑为登录get该接口从数据库获取请求，处理后根据选择更新视图模型和后端数据关系
-  const [notifications] = useState([
-    {
-      id: 1,
-      type: 'friend' as const,
-      title: '张三',
-      description: '请求添加你为好友',
-      timestamp: '10:30'
-    },
-    {
-      id: 2,
-      type: 'group' as const,
-      title: '前端交流群',
-      description: '邀请你加入群聊',
-      timestamp: '11:45'
-    }
-  ]);
+  // 使用WebSocket hook
+  const { isConnected, messages, contacts, sendMessage, fetchHistoryMessages, fetchContacts } = useWebSocket();
+
+  // 初始化数据
+  useEffect(() => {
+    fetchHistoryMessages();
+    fetchContacts();
+  }, [fetchHistoryMessages, fetchContacts]);
 
   const handleAcceptRequest = (id: number, type: 'friend' | 'group') => {
     console.log(`接受${type === 'friend' ? '好友' : '群聊'}请求:`, id);
@@ -71,50 +58,9 @@ const Chat: React.FC = () => {
     console.log(`拒绝${type === 'friend' ? '好友' : '群聊'}请求:`, id);
   };
 
-  // 模拟联系人数据
-  const contacts: Contact[] = [
-    { id: 0, name: 'AI助手', lastMessage: '有什么我可以帮你的吗？', unread: 0, online: true, type: 'personal', phone: 'ai-assistant' },
-    { id: 1, name: '未凉', lastMessage: '好的，明天见！', unread: 2, online: true, type: 'personal', phone: '13800138000' },
-    { id: 2, name: '海阔', lastMessage: '有人在吗？', unread: 0, online: true, type: 'personal', phone: '13800138001' },
-    { id: 3, name: '天空', lastMessage: '收到了吗？', unread: 1, online: false, type: 'group', members: [
-      { id: '1', name: '天空' },
-      { id: '2', name: '未凉' },
-      { id: '3', name: '海阔' },
-    ] },
-    { id: 4, name: '海图', lastMessage: '晚安！', unread: 0, online: false, type: 'personal', phone: '13800138002' },
-  ];
-
-  // 模拟消息数据
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      sender: '未凉',
-      content: 'Ceetpudtims onlihia',
-      timestamp: '14:00',
-    },
-    {
-      id: 2,
-      sender: username,
-      content: 'Onalfcae merodiar',
-      timestamp: '14:01',
-    },
-    {
-      id: 3,
-      sender: '未凉',
-      content: 'Sair tvcice circautemintation',
-      timestamp: '14:02',
-    },
-  ]);
-
   const handleSend = () => {
-    if (messageInput.trim() && selectedContact) {
-      const newMessage: Message = {
-        id: messages.length + 1,
-        sender: username,
-        content: messageInput,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages([...messages, newMessage]);
+    if (messageInput.trim() && selectedContact && isConnected) {
+      sendMessage(messageInput, selectedContact.id);
       setMessageInput('');
     }
   };
@@ -154,10 +100,10 @@ const Chat: React.FC = () => {
               <Text strong>Chat Group</Text>
             </div>
             <NotificationDropdown
-                notifications={notifications}
-                onAccept={handleAcceptRequest}
-                onReject={handleRejectRequest}
-              />
+              notifications={[]}
+              onAccept={handleAcceptRequest}
+              onReject={handleRejectRequest}
+            />
           </div>
           <div className={styles.searchBox}>
             <Input
@@ -211,12 +157,12 @@ const Chat: React.FC = () => {
                   </div>
                   <div className={styles.contactDetails}>
                     <div className={styles.nameContainer}>
-                    <Text strong>{contact.name}</Text>
-                    <span className={`${styles.typeTag} ${contact.type === 'personal' ? styles.personalTag : styles.groupTag}`}>
-                      {contact.type === 'personal' ? 'P' : 'G'}
-                    </span>
-                  </div>
-                  {contact.unread > 0 && (
+                      <Text strong>{contact.name}</Text>
+                      <span className={`${styles.typeTag} ${contact.type === 'personal' ? styles.personalTag : styles.groupTag}`}>
+                        {contact.type === 'personal' ? 'P' : 'G'}
+                      </span>
+                    </div>
+                    {contact.unread > 0 && (
                       <span className={styles.unreadBadge}>{contact.unread}</span>
                     )}
                   </div>
@@ -270,8 +216,8 @@ const Chat: React.FC = () => {
                 value={messageInput}
                 onChange={(e) => setMessageInput(e.target.value)}
                 onPressEnter={handleSend}
-                placeholder="Demo"
-                disabled={!selectedContact}
+                placeholder="输入消息"
+                disabled={!selectedContact || !isConnected}
                 className={styles.messageInput}
               />
             </Space.Compact>
@@ -279,7 +225,7 @@ const Chat: React.FC = () => {
               type="primary"
               icon={<SendOutlined />}
               onClick={handleSend}
-              disabled={!selectedContact}
+              disabled={!selectedContact || !isConnected}
               className={styles.sendButton}
             />
           </div>
@@ -298,7 +244,7 @@ const Chat: React.FC = () => {
         onClose={() => setDetailDrawerVisible(false)}
         contact={selectedContact ? {
           ...selectedContact,
-          id: String(selectedContact.id) // 将number类型的id转换为string类型
+          id: String(selectedContact.id)
         } : null}
       />
     </Layout>
