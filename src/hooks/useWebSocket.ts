@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { message } from 'antd';
+import { App } from 'antd';
 
 interface Message {
   id: number;
@@ -25,38 +25,49 @@ interface WebSocketMessage {
 }
 
 const WS_URL = 'ws://localhost:9000/ws';
+const RECONNECT_DELAY = 3000;
 
 export const useWebSocket = () => {
   const ws = useRef<WebSocket | null>(null);
+  const reconnectTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const connectionAttempt = useRef<boolean>(false);
   const [isConnected, setIsConnected] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const { message } = App.useApp();
 
   const connect = useCallback(() => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      message.error('未登录');
-      //重新登录，定向到登录页面
-      
+    if (connectionAttempt.current) {
+      return; // 防止重复连接尝试
     }
 
-    const socket = new WebSocket(`${WS_URL}`);
+    if (ws.current?.readyState === WebSocket.CONNECTING || 
+        ws.current?.readyState === WebSocket.OPEN) {
+      return; // 已经在连接中或已连接
+    }
 
-    socket.onopen = () => {
+    connectionAttempt.current = true;
+    const userId = localStorage.getItem('userId');
+    const socket = new WebSocket(WS_URL);
+
+    const handleOpen = () => {
+      connectionAttempt.current = false;
       setIsConnected(true);
-      //fetch发送注册登陆消息，上线
-      const userId=localStorage.getItem('userId');
-      const data={
-        action:1,
-        chatMsg:{
-          senderId: userId,
+      // 发送上线消息
+      socket.send(JSON.stringify({
+        action: 1,
+        chatMsg: {
+          senderId: userId
         }
+      }));
+      // 清除重连定时器
+      if (reconnectTimeout.current) {
+        clearTimeout(reconnectTimeout.current);
+        reconnectTimeout.current = undefined;
       }
-      socket.send(JSON.stringify(data));
-      message.success('已连接到聊天服务器');
     };
-    //接收到消息
-    socket.onmessage = (event) => {
+
+    const handleMessage = (event: MessageEvent) => {
       try {
         const data: WebSocketMessage = JSON.parse(event.data);
         switch (data.type) {
@@ -75,33 +86,59 @@ export const useWebSocket = () => {
       }
     };
 
-    socket.onclose = () => {
+    const handleClose = () => {
+      connectionAttempt.current = false;
       setIsConnected(false);
-      message.warning('与聊天服务器断开连接');
-      // 尝试重新连接
-      setTimeout(connect, 3000);
-      //下线,删除localStorage
-      //向后端发送logout请求
+      ws.current = null;
+
+      // 设置重连定时器
+      if (!reconnectTimeout.current) {
+        reconnectTimeout.current = setTimeout(() => {
+          reconnectTimeout.current = undefined;
+          connect();
+        }, RECONNECT_DELAY);
+      }
     };
 
-    socket.onerror = (error) => {
+    const handleError = (error: Event) => {
+      connectionAttempt.current = false;
       console.error('WebSocket错误:', error);
       message.error('连接发生错误');
     };
 
+    socket.addEventListener('open', handleOpen);
+    socket.addEventListener('message', handleMessage);
+    socket.addEventListener('close', handleClose);
+    socket.addEventListener('error', handleError);
+
     ws.current = socket;
-  }, []);
+
+    return () => {
+      socket.removeEventListener('open', handleOpen);
+      socket.removeEventListener('message', handleMessage);
+      socket.removeEventListener('close', handleClose);
+      socket.removeEventListener('error', handleError);
+    };
+  }, [message]);
 
   const disconnect = useCallback(() => {
-    if (ws.current) {
-      ws.current.close();
-      ws.current = null;
-      setIsConnected(false);
+    connectionAttempt.current = false;
+
+    // 清除重连定时器
+    if (reconnectTimeout.current) {
+      clearTimeout(reconnectTimeout.current);
+      reconnectTimeout.current = undefined;
     }
+
+    if (ws.current?.readyState === WebSocket.OPEN) {
+      ws.current.close();
+    }
+    ws.current = null;
+    setIsConnected(false);
   }, []);
 
   const sendMessage = useCallback((content: string, receiverId: number) => {
-    if (!ws.current || !isConnected) {
+    if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
       message.error('未连接到聊天服务器');
       return;
     }
@@ -116,25 +153,21 @@ export const useWebSocket = () => {
     };
 
     ws.current.send(JSON.stringify(messageData));
-  }, [isConnected]);
+  }, [message]);
 
   // 初始化WebSocket连接
   useEffect(() => {
-      if (!isConnected) {
-    connect();
-  }
-    return () => disconnect();
+    const cleanup = connect();
+    return () => {
+      cleanup?.();
+      disconnect();
+    };
   }, [connect, disconnect]);
 
   // 获取历史消息
   const fetchHistoryMessages = useCallback(async () => {
     try {
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch('/api/chat/messages/history', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await fetch('/chat/messages/history');
       const data = await response.json();
       if (data.code === 200) {
         setMessages(data.data);
@@ -143,17 +176,12 @@ export const useWebSocket = () => {
       console.error('获取历史消息失败:', error);
       message.error('获取历史消息失败');
     }
-  }, []);
+  }, [message]);
 
   // 获取联系人列表
   const fetchContacts = useCallback(async () => {
     try {
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch('/chat/contacts', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await fetch('/chat/contacts');
       const data = await response.json();
       if (data.code === 200) {
         setContacts(data.data);
@@ -162,7 +190,7 @@ export const useWebSocket = () => {
       console.error('获取联系人列表失败:', error);
       message.error('获取联系人列表失败');
     }
-  }, []);
+  }, [message]);
 
   return {
     isConnected,
