@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Form, Input, Button, App } from 'antd';
 import { UserOutlined, LockOutlined, LaptopOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import styles from './styles.module.css';
 
@@ -12,6 +13,7 @@ interface LoginForm {
 
 const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   const { message } = App.useApp();
 
   const onFinish = async (values: LoginForm) => {
@@ -38,8 +40,7 @@ const Login: React.FC = () => {
         localStorage.setItem('refreshToken', data.data.refreshToken);
         localStorage.setItem('userId', data.data.user.userId);
         localStorage.setItem('userName', data.data.user.userName);
-        console.log(localStorage.getItem('userId'));
-        console.log(localStorage.getItem('userName'));
+        navigate('/chat');
       }
     } catch (error) {
       message.error({
