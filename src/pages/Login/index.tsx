@@ -36,8 +36,10 @@ const Login: React.FC = () => {
         //跳转到聊天页面，local本地保存双token
         localStorage.setItem('accessToken', data.data.accessToken);
         localStorage.setItem('refreshToken', data.data.refreshToken);
-        console.log(localStorage.getItem('accessToken'));
-        console.log(localStorage.getItem('refreshToken'));
+        localStorage.setItem('userId', data.data.user.userId);
+        localStorage.setItem('userName', data.data.user.userName);
+        console.log(localStorage.getItem('userId'));
+        console.log(localStorage.getItem('userName'));
       }
     } catch (error) {
       message.error({

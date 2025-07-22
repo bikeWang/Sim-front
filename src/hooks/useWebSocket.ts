@@ -44,9 +44,8 @@ export const useWebSocket = () => {
 
     socket.onopen = () => {
       //fetch发送注册登陆消息，上线
-
       const userId=localStorage.getItem('userId');
-      let data={
+      const data={
         action:1,
         chatMsg:{
           senderId: userId,
@@ -129,7 +128,7 @@ export const useWebSocket = () => {
   const fetchHistoryMessages = useCallback(async () => {
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch('/chat/messages/history', {
+      const response = await fetch('/api/chat/messages/history', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
