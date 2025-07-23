@@ -153,16 +153,25 @@ const Chat: React.FC = () => {
               >
                 <div className={styles.contactInfo}>
                   <div className={styles.avatarWrapper}>
-                    <Avatar icon={contact.id === 0 ? <RobotOutlined /> : <UserOutlined />} style={contact.id === 0 ? { backgroundColor: '#6366f1' } : undefined} />
-                    {contact.online && <div className={styles.onlineStatus} />}
+                    {contact.type === 'personal' ? (
+                      <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#1890ff' }} />
+                    ) : (
+                      <Avatar icon={<TeamOutlined />} style={{ backgroundColor: '#52c41a' }} />
+                    )}
+                    {contact.type === 'personal' && contact.online && <div className={styles.onlineStatus} />}
                   </div>
                   <div className={styles.contactDetails}>
                     <div className={styles.nameContainer}>
                       <Text strong>{contact.name}</Text>
                       <span className={`${styles.typeTag} ${contact.type === 'personal' ? styles.personalTag : styles.groupTag}`}>
-                        {contact.type === 'personal' ? 'P' : 'G'}
+                        {contact.type === 'personal' ? '用户' : '群组'}
                       </span>
                     </div>
+                    {contact.lastMessage && (
+                      <Text type="secondary" className={styles.lastMessage} ellipsis>
+                        {contact.lastMessage}
+                      </Text>
+                    )}
                     {contact.unread > 0 && (
                       <span className={styles.unreadBadge}>{contact.unread}</span>
                     )}

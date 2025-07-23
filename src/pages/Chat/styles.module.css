@@ -134,35 +134,46 @@
 
 .contactDetails {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  justify-content: center;
   flex: 1;
+  overflow: hidden;
 }
 
 .nameContainer {
   display: flex;
   align-items: center;
   gap: 8px;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .typeTag {
   font-size: 12px;
   font-weight: 500;
-  width: 20px;
-  height: 20px;
+  padding: 2px 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: 12px;
   color: #fff;
 }
 
 .personalTag {
-  background-color: #6366f1;
+  background-color: #1890ff;
 }
 
 .groupTag {
-  background-color: #a855f7;
+  background-color: #52c41a;
+}
+
+.lastMessage {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  margin-top: 4px;
 }
 
 .unreadBadge {

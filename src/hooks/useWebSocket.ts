@@ -24,7 +24,7 @@ interface WebSocketMessage {
   data: any;
 }
 
-const WS_URL = 'ws://localhost:9000/ws';
+const WS_URL = 'ws://localhost:8080/ws';
 const RECONNECT_DELAY = 3000;
 
 export const useWebSocket = () => {
@@ -181,16 +181,49 @@ export const useWebSocket = () => {
   // 获取联系人列表
   const fetchContacts = useCallback(async () => {
     try {
-      const response = await fetch('/chat/contacts');
+      const accessToken = localStorage.getItem('accessToken');
+      const response = await fetch('/api/chat/getAllChatBox',
+        {
+         method: 'GET', // 根据接口要求设置请求方法，GET/POST等
+         headers: {
+            'Content-Type': 'application/json', // 通常需要指定内容类型
+            'Authorization': accessToken ? `Bearer ${accessToken}` : '' // 拼接 Bearer 前缀
+         }
+        }
+      );
       const data = await response.json();
       if (data.code === 200) {
-        setContacts(data.data);
+        // 转换新的数据结构为应用所需的联系人格式
+        const formattedContacts = data.data.map((item: any) => {
+          if (item.type) { // 群组类型
+            return {
+              id: item.group.groupId,
+              name: item.group.groupName,
+              lastMessage: '',
+              unread: 0,
+              type: 'group',
+              members: [] // 可以在需要时获取群组成员
+            };
+          } else { // 个人联系人类型
+            return {
+              id: item.userVo.user.userId,
+              name: item.userVo.user.userName,
+              lastMessage: '',
+              unread: 0,
+              online: item.userVo.status,
+              type: 'personal',
+              phone: '' // 可以在需要时添加电话信息
+            };
+          }
+        });
+        setContacts(formattedContacts);
       }
     } catch (error) {
       console.error('获取联系人列表失败:', error);
       message.error('获取联系人列表失败');
     }
   }, [message]);
+
 
   return {
     isConnected,
