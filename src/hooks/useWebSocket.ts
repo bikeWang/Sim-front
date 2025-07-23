@@ -181,8 +181,10 @@ export const useWebSocket = () => {
   // 获取联系人列表
   const fetchContacts = useCallback(async () => {
     try {
+      const userId=localStorage.getItem('userId');
       const accessToken = localStorage.getItem('accessToken');
-      const response = await fetch('/api/chat/getAllChatBox',
+      const url=`/api/chat/getAllChatBox?userId=${userId}`;
+      const response = await fetch(url,
         {
          method: 'GET', // 根据接口要求设置请求方法，GET/POST等
          headers: {
