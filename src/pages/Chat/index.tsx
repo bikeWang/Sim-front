@@ -6,7 +6,7 @@ import NotificationDropdown from './NotificationDropdown';
 import SearchModal from './SearchModal';
 import CreateGroupModal from './CreateGroupModal';
 import ProfileModal from './ProfileModal';
-import { SendOutlined, UserOutlined, LogoutOutlined, SearchOutlined, PlusOutlined, UserAddOutlined, TeamOutlined, RobotOutlined } from '@ant-design/icons';
+import { SendOutlined, UserOutlined, LogoutOutlined, SearchOutlined, PlusOutlined, UserAddOutlined, TeamOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { logout } from '../../store/userSlice';
