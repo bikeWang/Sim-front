@@ -269,14 +269,15 @@ export const useWebSocket = () => {
         return false;
       }
 
+      const url=`/api/user-info/user/offline?userId=${userId}`
+
       // 调用后端下线API
-      const response = await fetch('/api/user-info/user/offline', {
-        method: 'POST',
+      const response = await fetch(url, {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`
         },
-        body: JSON.stringify({ userId })
       });
 
       const data = await response.json();
