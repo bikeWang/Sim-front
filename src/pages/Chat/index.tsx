@@ -52,7 +52,8 @@ const Chat: React.FC = () => {
     setSelectedContact: setWebSocketSelectedContact,
     fetchContacts,
     contacts,
-    logout: webSocketLogout
+    logout: webSocketLogout,
+    fetchGroupMembers
   } = useWebSocket();
   
   // 当选中联系人或消息变化时，滚动到底部
@@ -322,10 +323,8 @@ const Chat: React.FC = () => {
       <DetailDrawer
         visible={detailDrawerVisible}
         onClose={() => setDetailDrawerVisible(false)}
-        contact={selectedContact ? {
-          ...selectedContact,
-          id: String(selectedContact.id)
-        } : null}
+        contact={selectedContact}
+        onFetchGroupMembers={fetchGroupMembers}
       />
       <ProfileModal
         visible={profileModalVisible}

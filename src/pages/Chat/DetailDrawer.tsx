@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Drawer, Avatar, Input, List, Button, App } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import styles from './detailDrawer.module.css';
@@ -7,18 +7,27 @@ interface DetailDrawerProps {
   visible: boolean;
   onClose: () => void;
   contact: {
-    id: string;
+    id: number;
     name: string;
     type: 'personal' | 'group';
     avatar?: string;
     phone?: string;
     note?: string;
-    members?: { id: string; name: string }[];
+    members?: { userId: number; userName: string }[];
   } | null;
+  onFetchGroupMembers?: (groupId: number) => Promise<{ userId: number; userName: string }[]>;
 }
 
-const DetailDrawer: React.FC<DetailDrawerProps> = ({ visible, onClose, contact }) => {
+const DetailDrawer: React.FC<DetailDrawerProps> = ({ visible, onClose, contact, onFetchGroupMembers }) => {
   const { modal } = App.useApp();
+  
+  // 当群聊详情打开时，自动获取群成员列表
+  useEffect(() => {
+    if (visible && contact && contact.type === 'group' && onFetchGroupMembers) {
+      onFetchGroupMembers(contact.id);
+    }
+  }, [visible, contact, onFetchGroupMembers]);
+  
   if (!contact) return null;
 
   const isPersonal = contact.type === 'personal';
@@ -90,7 +99,7 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ visible, onClose, contact }
               renderItem={member => (
                 <List.Item className={styles.memberItem}>
                   <Avatar size="small" icon={<UserOutlined />} />
-                  <span className={styles.memberName}>{member.name}</span>
+                  <span className={styles.memberName}>{member.userName}</span>
                 </List.Item>
               )}
             />

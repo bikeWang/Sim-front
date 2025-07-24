@@ -20,7 +20,14 @@ interface Contact {
   online?: boolean;
   type: 'personal' | 'group';
   phone?: string;
-  members?: { id: string; name: string }[];
+  members?: { userId: number; userName: string }[];
+}
+
+interface GroupMember {
+  userId: number;
+  userName: string;
+  password: string;
+  avatar: string;
 }
 
 interface ChatMsg {
@@ -483,6 +490,48 @@ export const useWebSocket = () => {
     }
   }, [message]);
 
+  // 获取群成员列表
+  const fetchGroupMembers = useCallback(async (groupId: number) => {
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      const url = `/api/user-info/user/getGroupUser?groupId=${groupId}`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
+      });
+      
+      const data = await response.json();
+      if (data.code === 200) {
+        // 过滤掉password和avatar字段，只返回userId和userName
+        const members = data.data.map((member: GroupMember) => ({
+          userId: member.userId,
+          userName: member.userName
+        }));
+        
+        // 更新对应群组的成员列表
+        setContacts(prev => 
+          prev.map(contact => 
+            contact.id === groupId && contact.type === 'group'
+              ? { ...contact, members }
+              : contact
+          )
+        );
+        
+        return members;
+      } else {
+        message.error(data.msg || '获取群成员失败');
+        return [];
+      }
+    } catch (error) {
+      console.error('获取群成员失败:', error);
+      message.error('获取群成员失败');
+      return [];
+    }
+  }, [message]);
 
   return {
     isConnected,
@@ -494,6 +543,7 @@ export const useWebSocket = () => {
     setSelectedContact, // 设置选中联系人并加载历史消息
     fetchContacts,
     contacts,
-    logout // 用户下线功能
+    logout, // 用户下线功能
+    fetchGroupMembers // 获取群成员列表
   };
 };
