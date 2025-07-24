@@ -51,7 +51,8 @@ const Chat: React.FC = () => {
     sendMessage,
     setSelectedContact: setWebSocketSelectedContact,
     fetchContacts,
-    contacts
+    contacts,
+    logout: webSocketLogout
   } = useWebSocket();
   
   // 当选中联系人或消息变化时，滚动到底部
@@ -110,9 +111,12 @@ const Chat: React.FC = () => {
                       icon: <LogoutOutlined />,
                       label: '退出登录',
                       danger: true,
-                      onClick: () => {
-                        dispatch(logout());
-                        navigate('/');
+                      onClick: async () => {
+                        const success = await webSocketLogout();
+                        if (success) {
+                          dispatch(logout());
+                          navigate('/');
+                        }
                       }
                     }
                   ]

@@ -258,6 +258,58 @@ export const useWebSocket = () => {
     setIsConnected(false);
   }, []);
 
+  // 用户下线功能
+  const logout = useCallback(async () => {
+    try {
+      const userId = localStorage.getItem('userId');
+      const accessToken = localStorage.getItem('accessToken');
+      
+      if (!userId || !accessToken) {
+        message.error('用户信息不完整');
+        return false;
+      }
+
+      // 调用后端下线API
+      const response = await fetch('/api/user-info/user/offline', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({ userId })
+      });
+
+      const data = await response.json();
+      
+      if (data.code === 200) {
+        // 下线成功，断开WebSocket连接
+        disconnect();
+        
+        // 清除本地存储
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userName');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('contactMessages');
+        localStorage.removeItem('refreshToken');
+        
+        // 重置状态
+        setContactMessages(new Map());
+        setCurrentContactId('');
+        setContacts([]);
+        
+        message.success('退出成功');
+        return true;
+      } else {
+        message.error(data.message || '退出失败');
+        return false;
+      }
+    } catch (error) {
+      console.error('退出登录失败:', error);
+      message.error('退出登录失败');
+      return false;
+    }
+  }, [disconnect, message]);
+
   const sendMessage = useCallback((content: string, receiverId: number, type: 1 | 2 = 1) => {
     if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
       message.error('未连接到聊天服务器');
@@ -440,6 +492,7 @@ export const useWebSocket = () => {
     fetchHistoryMessages,
     setSelectedContact, // 设置选中联系人并加载历史消息
     fetchContacts,
-    contacts
+    contacts,
+    logout // 用户下线功能
   };
 };
