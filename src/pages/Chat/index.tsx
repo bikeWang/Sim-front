@@ -270,7 +270,7 @@ const Chat: React.FC = () => {
                       <div className={styles.messageContent}>
                         {!isSentByMe && (
                           <Text type="secondary" className={styles.senderName}>
-                            {msg.sender}
+                            {msg.userName || msg.sender}
                           </Text>
                         )}
                         <Text>{msg.content}</Text>
@@ -279,7 +279,7 @@ const Chat: React.FC = () => {
                         </Text>
                       </div>
                     </div>
-                  );
+                   );
                 })}
             </div>
           </Content>

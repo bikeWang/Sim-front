@@ -8,6 +8,8 @@ interface Message {
   content: string;
   timestamp: string;
   type?: 1 | 2; // 1为私聊，2为群聊
+  userName?: string; // 发送者用户名
+  avatar?: string; // 发送者头像
 }
 
 interface Contact {
@@ -122,11 +124,13 @@ export const useWebSocket = () => {
           const messageVo: MessageVo = data;
           const newMessage: Message = {
             id: messageVo.id,
-            sender: messageVo.userName,
+            sender: messageVo.sender?.toString(),
             receiver: messageVo.receiver?.toString(),
             content: messageVo.content,
             timestamp: messageVo.gmtCreate,
-            type: 1 // 默认为私聊
+            type: 1, // 默认为私聊
+            userName: messageVo.userName,
+            avatar: messageVo.avatar
           };
           console.log('接收到新消息(MessageVo):', {
              原始数据: messageVo,
@@ -348,11 +352,13 @@ export const useWebSocket = () => {
         // 转换服务器返回的消息格式
         const historyMessages: Message[] = data.data.map((item: any) => ({
           id: item.id,
-          sender: item.userName || item.sender?.toString(),
+          sender: item.sender?.toString(),
           receiver: item.receiver?.toString(),
           content: item.content,
           timestamp: item.gmtCreate,
-          type: 1 // 默认为私聊
+          type: 1, // 默认为私聊
+          userName: item.userName,
+          avatar: item.avatar
         }));
         
         // 存储到对应联系人的消息列表
