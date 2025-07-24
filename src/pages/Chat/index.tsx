@@ -184,7 +184,13 @@ const Chat: React.FC = () => {
             renderItem={(contact) => (
               <List.Item
                 onClick={() => {
-                   setSelectedContact(contact);
+                   setSelectedContact({
+                     ...contact,
+                     members: contact.members?.map(member => ({
+                       id: member.userId.toString(),
+                       name: member.userName
+                     }))
+                   });
                    setWebSocketSelectedContact(contact.id.toString());
                  }}
                 className={`${styles.contactItem} ${selectedContact?.id === contact.id ? styles.selected : ''}`}
@@ -323,7 +329,16 @@ const Chat: React.FC = () => {
       <DetailDrawer
         visible={detailDrawerVisible}
         onClose={() => setDetailDrawerVisible(false)}
-        contact={selectedContact}
+        contact={selectedContact ? {
+          id: selectedContact.id,
+          name: selectedContact.name,
+          type: selectedContact.type,
+          phone: selectedContact.phone,
+          members: selectedContact.members?.map(member => ({
+            userId: Number(member.id),
+            userName: member.name
+          }))
+        } : null}
         onFetchGroupMembers={fetchGroupMembers}
       />
       <ProfileModal
