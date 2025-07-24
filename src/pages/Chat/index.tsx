@@ -43,13 +43,29 @@ const Chat: React.FC = () => {
   const [searchText, setSearchText] = useState('');
 
   // 使用WebSocket hook
-  const { isConnected, messages, contacts, sendMessage, fetchHistoryMessages, fetchContacts } = useWebSocket();
+  const {
+    isConnected,
+    messages,
+    contactMessages,
+    currentContactId,
+    sendMessage,
+    setSelectedContact: setWebSocketSelectedContact,
+    fetchContacts,
+    contacts
+  } = useWebSocket();
+  
+  // 当选中联系人或消息变化时，滚动到底部
+  useEffect(() => {
+    const messageList = document.querySelector(`.${styles.messageList}`);
+    if (messageList) {
+      messageList.scrollTop = messageList.scrollHeight;
+    }
+  }, [selectedContact, messages]);
 
   // 初始化数据
   useEffect(() => {
-    fetchHistoryMessages();
     fetchContacts();
-  }, [fetchHistoryMessages, fetchContacts]);
+  }, [fetchContacts]);
 
   const handleAcceptRequest = (id: number, type: 'friend' | 'group') => {
     console.log(`接受${type === 'friend' ? '好友' : '群聊'}请求:`, id);
@@ -63,6 +79,12 @@ const Chat: React.FC = () => {
     if (messageInput.trim() && selectedContact && isConnected) {
       // 根据联系人类型确定消息类型：1为私聊，2为群聊
       const messageType = selectedContact.type === 'personal' ? 1 : 2;
+      console.log('发送消息:', {
+        content: messageInput,
+        receiverId: selectedContact.id,
+        type: messageType,
+        selectedContact
+      });
       sendMessage(messageInput, selectedContact.id, messageType);
       setMessageInput('');
     }
@@ -100,7 +122,13 @@ const Chat: React.FC = () => {
               >
                 <Avatar size={36} style={{ backgroundColor: '#6366f1', cursor: 'pointer' }}>{username ? username[0].toUpperCase() : 'U'}</Avatar>
               </Dropdown>
-              <Text strong>Chat Group</Text>
+              <div className={styles.userInfo}>
+                <Text strong>{localStorage.getItem('userName') || username}</Text>
+                <div className={styles.onlineIndicator}>
+                  <div className={styles.onlineDot}></div>
+                  <Text type="secondary" className={styles.onlineText}>在线</Text>
+                </div>
+              </div>
             </div>
             <NotificationDropdown
               notifications={[]}
@@ -150,7 +178,10 @@ const Chat: React.FC = () => {
             )}
             renderItem={(contact) => (
               <List.Item
-                onClick={() => setSelectedContact(contact)}
+                onClick={() => {
+                   setSelectedContact(contact);
+                   setWebSocketSelectedContact(contact.id.toString());
+                 }}
                 className={`${styles.contactItem} ${selectedContact?.id === contact.id ? styles.selected : ''}`}
               >
                 <div className={styles.contactInfo}>
@@ -204,43 +235,52 @@ const Chat: React.FC = () => {
           </Header>
           <Content className={styles.chatContent}>
             <div className={styles.messageList}>
-              {messages.map((msg) => {
-                // 获取当前用户ID用于判断消息方向
-                const currentUserId = localStorage.getItem('userId');
-                const isSentByMe = msg.sender === username || msg.sender === currentUserId;
-                
-                // 格式化时间戳
-                const formatTimestamp = (timestamp: string) => {
-                  try {
-                    const date = new Date(timestamp);
-                    return date.toLocaleTimeString('zh-CN', { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    });
-                  } catch {
-                    return timestamp;
-                  }
-                };
-                
-                return (
-                  <div
-                    key={msg.id}
-                    className={`${styles.messageItem} ${isSentByMe ? styles.sent : styles.received}`}
-                  >
-                    <div className={styles.messageContent}>
-                      {!isSentByMe && (
-                        <Text type="secondary" className={styles.senderName}>
-                          {msg.sender}
+              {selectedContact && messages
+                 .map((msg) => {
+                  // 获取当前用户ID用于判断消息方向
+                  const currentUserId = localStorage.getItem('userId');
+                  const currentUserName = localStorage.getItem('userName');
+                  const isSentByMe = msg.sender === currentUserId || msg.sender === currentUserName;
+                  
+                  console.log('=== 渲染消息 ===');
+                  console.log('消息ID:', msg.id, '内容:', msg.content);
+                  console.log('发送者:', msg.sender);
+                  console.log('当前用户ID:', currentUserId);
+                  console.log('当前用户名:', currentUserName);
+                  console.log('是否我发送的:', isSentByMe);
+                  
+                  // 格式化时间戳
+                  const formatTimestamp = (timestamp: string) => {
+                    try {
+                      const date = new Date(timestamp);
+                      return date.toLocaleTimeString('zh-CN', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      });
+                    } catch {
+                      return timestamp;
+                    }
+                  };
+                  
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`${styles.messageItem} ${isSentByMe ? styles.sent : styles.received}`}
+                    >
+                      <div className={styles.messageContent}>
+                        {!isSentByMe && (
+                          <Text type="secondary" className={styles.senderName}>
+                            {msg.sender}
+                          </Text>
+                        )}
+                        <Text>{msg.content}</Text>
+                        <Text type="secondary" className={styles.timestamp}>
+                          {formatTimestamp(msg.timestamp)}
                         </Text>
-                      )}
-                      <Text>{msg.content}</Text>
-                      <Text type="secondary" className={styles.timestamp}>
-                        {formatTimestamp(msg.timestamp)}
-                      </Text>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           </Content>
           <div className={styles.inputArea}>

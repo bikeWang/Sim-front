@@ -29,6 +29,43 @@
   gap: 12px;
 }
 
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.onlineIndicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.onlineDot {
+  width: 8px;
+  height: 8px;
+  background-color: #22c55e;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.onlineText {
+  font-size: 12px;
+  color: #64748b;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
 :global(.ant-dropdown-menu) {
   border-radius: 16px;
   padding: 8px;

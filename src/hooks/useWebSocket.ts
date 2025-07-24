@@ -1,11 +1,13 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { App } from 'antd';
 
 interface Message {
   id: number;
   sender: string;
+  receiver?: string;
   content: string;
   timestamp: string;
+  type?: 1 | 2; // 1为私聊，2为群聊
 }
 
 interface Contact {
@@ -27,11 +29,14 @@ interface ChatMsg {
 }
 
 interface MessageVo {
-  id: number;
-  sender: number;
-  receiver: number;
+  action: number;
+  avatar: string;
   content: string;
   gmtCreate: string;
+  id: number;
+  receiver: number;
+  sender: number;
+  userName: string;
 }
 
 interface WebSocketMessage {
@@ -51,7 +56,28 @@ export const useWebSocket = () => {
   const reconnectTimeout = useRef<ReturnType<typeof setTimeout>>();
   const connectionAttempt = useRef<boolean>(false);
   const [isConnected, setIsConnected] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
+  // 初始化联系人消息状态
+  const [contactMessages, setContactMessages] = useState<Map<string, Message[]>>(() => {
+    const saved = localStorage.getItem('contactMessages');
+    if (saved) {
+      try {
+        const messagesObj = JSON.parse(saved);
+        return new Map(Object.entries(messagesObj));
+      } catch (error) {
+        console.error('解析保存的消息失败:', error);
+        return new Map();
+      }
+    }
+    return new Map();
+  });
+  
+  // 当前选中的联系人ID
+  const [currentContactId, setCurrentContactId] = useState<string>('');
+  
+  // 当前选中联系人的消息（计算属性）
+  const messages = useMemo(() => {
+    return currentContactId ? (contactMessages.get(currentContactId) || []) : [];
+  }, [contactMessages, currentContactId]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const { message } = App.useApp();
 
@@ -88,39 +114,84 @@ export const useWebSocket = () => {
 
     const handleMessage = (event: MessageEvent) => {
       try {
-        const data: WebSocketMessage = JSON.parse(event.data);
+        const data = JSON.parse(event.data);
         console.log('收到消息:', data);
-        switch (data.action) {
+        
+        // 检查是否是MessageVo格式的消息（直接接收）
+        if (data.action && data.content && data.userName && data.gmtCreate) {
+          const messageVo: MessageVo = data;
+          const newMessage: Message = {
+            id: messageVo.id,
+            sender: messageVo.userName,
+            receiver: messageVo.receiver?.toString(),
+            content: messageVo.content,
+            timestamp: messageVo.gmtCreate,
+            type: 1 // 默认为私聊
+          };
+          console.log('接收到新消息(MessageVo):', {
+             原始数据: messageVo,
+             解析后消息: newMessage,
+             当前用户ID: localStorage.getItem('userId'),
+             当前用户名: localStorage.getItem('userName')
+           });
+           
+           // 确定消息所属的联系人ID
+           const currentUserId = localStorage.getItem('userId');
+           const contactId = newMessage.sender === currentUserId ? newMessage.receiver : newMessage.sender;
+           
+           if (contactId) {
+             setContactMessages(prev => {
+               const newMap = new Map(prev);
+               const existingMessages = newMap.get(contactId) || [];
+               newMap.set(contactId, [...existingMessages, newMessage]);
+               return newMap;
+             });
+           }
+          return;
+        }
+        
+        // 兼容WebSocketMessage格式（用于其他类型的消息）
+        const wsMessage: WebSocketMessage = data;
+        switch (wsMessage.action) {
           case 2: // 聊天消息
-            // 处理新的MessageVo数据结构
-            if (data.message) {
-              const newMessage: Message = {
-                id: data.message.id,
-                sender: data.userName || data.message.sender.toString(),
-                content: data.message.content,
-                timestamp: data.message.gmtCreate
-              };
-              setMessages(prev => [...prev, newMessage]);
-            }
-            // 兼容原有的chatMsg结构
-            else if (data.chatMsg) {
+            if (wsMessage.chatMsg) {
               const newMessage: Message = {
                 id: Date.now(), // 临时ID，实际应该从服务器获取
-                sender: data.chatMsg.senderId.toString(),
-                content: data.chatMsg.message,
-                timestamp: new Date().toISOString()
+                sender: wsMessage.chatMsg.senderId.toString(),
+                receiver: wsMessage.chatMsg.receiverId.toString(),
+                content: wsMessage.chatMsg.message,
+                timestamp: new Date().toISOString(),
+                type: wsMessage.chatMsg.type
               };
-              setMessages(prev => [...prev, newMessage]);
+              console.log('接收到新消息(chatMsg):', {
+                 原始数据: wsMessage,
+                 解析后消息: newMessage,
+                 当前用户ID: localStorage.getItem('userId'),
+                 当前用户名: localStorage.getItem('userName')
+               });
+               
+               // 确定消息所属的联系人ID
+               const currentUserId = localStorage.getItem('userId');
+               const contactId = newMessage.sender === currentUserId ? newMessage.receiver : newMessage.sender;
+               
+               if (contactId) {
+                 setContactMessages(prev => {
+                   const newMap = new Map(prev);
+                   const existingMessages = newMap.get(contactId) || [];
+                   newMap.set(contactId, [...existingMessages, newMessage]);
+                   return newMap;
+                 });
+               }
             }
             break;
           case 3: // 用户状态更新
-            if (data.data) {
-              setContacts(data.data);
+            if (wsMessage.data) {
+              setContacts(wsMessage.data);
             }
             break;
           case 4: // 通知
-            if (data.data) {
-              message.info(data.data.content || data.data.message);
+            if (wsMessage.data) {
+              message.info(wsMessage.data.content || wsMessage.data.message);
             }
             break;
           case 1: // 连接确认
@@ -190,10 +261,30 @@ export const useWebSocket = () => {
     }
 
     const userId = localStorage.getItem('userId');
+    const userName = localStorage.getItem('userName');
     if (!userId) {
       message.error('用户未登录');
       return;
     }
+
+    // 立即添加消息到本地状态（发送者视角）
+    const newMessage: Message = {
+      id: Date.now(), // 临时ID，后续可以用服务器返回的真实ID替换
+      sender: userName || userId,
+      receiver: receiverId.toString(),
+      content,
+      timestamp: new Date().toISOString(),
+      type
+    };
+    
+    // 添加到对应联系人的消息列表
+    const contactId = receiverId.toString();
+    setContactMessages(prev => {
+      const newMap = new Map(prev);
+      const existingMessages = newMap.get(contactId) || [];
+      newMap.set(contactId, [...existingMessages, newMessage]);
+      return newMap;
+    });
 
     const messageData: WebSocketMessage = {
       action: 2, // 聊天消息
@@ -208,6 +299,20 @@ export const useWebSocket = () => {
     ws.current.send(JSON.stringify(messageData));
   }, [message]);
 
+  // 监听contactMessages变化，自动保存到localStorage
+  useEffect(() => {
+    console.log('消息状态更新:', {
+      contactCount: contactMessages.size,
+      currentContactId,
+      currentMessageCount: messages.length,
+      latestMessages: messages.slice(-3) // 显示最新的3条消息
+    });
+    
+    // 将Map转换为普通对象进行存储
+    const messagesObj = Object.fromEntries(contactMessages);
+    localStorage.setItem('contactMessages', JSON.stringify(messagesObj));
+  }, [contactMessages, currentContactId, messages]);
+
   // 初始化WebSocket连接
   useEffect(() => {
     const cleanup = connect();
@@ -217,19 +322,59 @@ export const useWebSocket = () => {
     };
   }, [connect, disconnect]);
 
-  // 获取历史消息
-  const fetchHistoryMessages = useCallback(async () => {
+  // 获取指定联系人的历史消息
+  const fetchHistoryMessages = useCallback(async (contactId: string) => {
     try {
-      const response = await fetch('/chat/messages/history');
+      // 检查是否已经加载过该联系人的消息
+      if (contactMessages.has(contactId)) {
+        console.log(`联系人 ${contactId} 的消息已存在，跳过加载`);
+        return;
+      }
+      
+      const userId = localStorage.getItem('userId');
+      const accessToken = localStorage.getItem('accessToken');
+      const url = `/api/chat/getChatById?userId=${userId}&friendId=${contactId}`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
+      });
+      
       const data = await response.json();
       if (data.code === 200) {
-        setMessages(data.data);
+        // 转换服务器返回的消息格式
+        const historyMessages: Message[] = data.data.map((item: any) => ({
+          id: item.id,
+          sender: item.userName || item.sender?.toString(),
+          receiver: item.receiver?.toString(),
+          content: item.content,
+          timestamp: item.gmtCreate,
+          type: 1 // 默认为私聊
+        }));
+        
+        // 存储到对应联系人的消息列表
+        setContactMessages(prev => {
+          const newMap = new Map(prev);
+          newMap.set(contactId, historyMessages);
+          return newMap;
+        });
+        
+        console.log(`成功加载联系人 ${contactId} 的 ${historyMessages.length} 条历史消息`);
       }
     } catch (error) {
       console.error('获取历史消息失败:', error);
       message.error('获取历史消息失败');
     }
-  }, [message]);
+  }, [contactMessages, message]);
+  
+  // 设置当前选中的联系人并加载其历史消息
+  const setSelectedContact = useCallback(async (contactId: string) => {
+    setCurrentContactId(contactId);
+    await fetchHistoryMessages(contactId);
+  }, [fetchHistoryMessages]);
 
   // 获取联系人列表
   const fetchContacts = useCallback(async () => {
@@ -282,10 +427,13 @@ export const useWebSocket = () => {
 
   return {
     isConnected,
-    messages,
-    contacts,
+    messages, // 当前选中联系人的消息
+    contactMessages, // 所有联系人的消息Map
+    currentContactId, // 当前选中的联系人ID
     sendMessage,
     fetchHistoryMessages,
-    fetchContacts
+    setSelectedContact, // 设置选中联系人并加载历史消息
+    fetchContacts,
+    contacts
   };
 };
