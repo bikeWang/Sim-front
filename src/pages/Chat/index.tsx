@@ -61,7 +61,9 @@ const Chat: React.FC = () => {
 
   const handleSend = () => {
     if (messageInput.trim() && selectedContact && isConnected) {
-      sendMessage(messageInput, selectedContact.id);
+      // 根据联系人类型确定消息类型：1为私聊，2为群聊
+      const messageType = selectedContact.type === 'personal' ? 1 : 2;
+      sendMessage(messageInput, selectedContact.id, messageType);
       setMessageInput('');
     }
   };
@@ -202,19 +204,43 @@ const Chat: React.FC = () => {
           </Header>
           <Content className={styles.chatContent}>
             <div className={styles.messageList}>
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`${styles.messageItem} ${msg.sender === username ? styles.sent : styles.received}`}
-                >
-                  <div className={styles.messageContent}>
-                    <Text>{msg.content}</Text>
-                    <Text type="secondary" className={styles.timestamp}>
-                      {msg.timestamp}
-                    </Text>
+              {messages.map((msg) => {
+                // 获取当前用户ID用于判断消息方向
+                const currentUserId = localStorage.getItem('userId');
+                const isSentByMe = msg.sender === username || msg.sender === currentUserId;
+                
+                // 格式化时间戳
+                const formatTimestamp = (timestamp: string) => {
+                  try {
+                    const date = new Date(timestamp);
+                    return date.toLocaleTimeString('zh-CN', { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    });
+                  } catch {
+                    return timestamp;
+                  }
+                };
+                
+                return (
+                  <div
+                    key={msg.id}
+                    className={`${styles.messageItem} ${isSentByMe ? styles.sent : styles.received}`}
+                  >
+                    <div className={styles.messageContent}>
+                      {!isSentByMe && (
+                        <Text type="secondary" className={styles.senderName}>
+                          {msg.sender}
+                        </Text>
+                      )}
+                      <Text>{msg.content}</Text>
+                      <Text type="secondary" className={styles.timestamp}>
+                        {formatTimestamp(msg.timestamp)}
+                      </Text>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Content>
           <div className={styles.inputArea}>

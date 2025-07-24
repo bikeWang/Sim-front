@@ -281,6 +281,14 @@
   border-bottom-left-radius: 4px;
 }
 
+.senderName {
+  font-size: 12px;
+  margin-bottom: 4px;
+  display: block;
+  font-weight: 500;
+  color: #6366f1;
+}
+
 .timestamp {
   font-size: 12px;
   margin-top: 4px;
