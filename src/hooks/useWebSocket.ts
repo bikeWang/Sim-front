@@ -19,9 +19,28 @@ interface Contact {
   members?: { id: string; name: string }[];
 }
 
+interface ChatMsg {
+  senderId: number;
+  receiverId: number;
+  message: string;
+  type: 1 | 2; // 1为私聊，2为群聊
+}
+
+interface MessageVo {
+  id: number;
+  sender: number;
+  receiver: number;
+  content: string;
+  gmtCreate: string;
+}
+
 interface WebSocketMessage {
-  type: 'message' | 'contact_update' | 'notification';
-  data: any;
+  action: 1 | 2 | 3 | 4; // 1连接，2聊天，3用户状态更新，4通知
+  chatMsg?: ChatMsg;
+  userName?: string; // 发送者用户名
+  avatar?: string; // 发送者头像
+  message?: MessageVo; // 新的消息对象结构
+  data?: any; // 保留用于其他类型的数据
 }
 
 const WS_URL = 'ws://localhost:8080/ws';
@@ -70,15 +89,42 @@ export const useWebSocket = () => {
     const handleMessage = (event: MessageEvent) => {
       try {
         const data: WebSocketMessage = JSON.parse(event.data);
-        switch (data.type) {
-          case 'message':
-            setMessages(prev => [...prev, data.data]);
+        console.log('收到消息:', data);
+        switch (data.action) {
+          case 2: // 聊天消息
+            // 处理新的MessageVo数据结构
+            if (data.message) {
+              const newMessage: Message = {
+                id: data.message.id,
+                sender: data.userName || data.message.sender.toString(),
+                content: data.message.content,
+                timestamp: data.message.gmtCreate
+              };
+              setMessages(prev => [...prev, newMessage]);
+            }
+            // 兼容原有的chatMsg结构
+            else if (data.chatMsg) {
+              const newMessage: Message = {
+                id: Date.now(), // 临时ID，实际应该从服务器获取
+                sender: data.chatMsg.senderId.toString(),
+                content: data.chatMsg.message,
+                timestamp: new Date().toISOString()
+              };
+              setMessages(prev => [...prev, newMessage]);
+            }
             break;
-          case 'contact_update':
-            setContacts(data.data);
+          case 3: // 用户状态更新
+            if (data.data) {
+              setContacts(data.data);
+            }
             break;
-          case 'notification':
-            message.info(data.data.content);
+          case 4: // 通知
+            if (data.data) {
+              message.info(data.data.content || data.data.message);
+            }
+            break;
+          case 1: // 连接确认
+            console.log('连接已确认');
             break;
         }
       } catch (error) {
@@ -137,18 +183,25 @@ export const useWebSocket = () => {
     setIsConnected(false);
   }, []);
 
-  const sendMessage = useCallback((content: string, receiverId: number) => {
+  const sendMessage = useCallback((content: string, receiverId: number, type: 1 | 2 = 1) => {
     if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
       message.error('未连接到聊天服务器');
       return;
     }
 
-    const messageData = {
-      type: 'message',
-      data: {
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      message.error('用户未登录');
+      return;
+    }
+
+    const messageData: WebSocketMessage = {
+      action: 2, // 聊天消息
+      chatMsg: {
+        senderId: parseInt(userId),
         receiverId,
-        content,
-        timestamp: new Date().toISOString()
+        message: content,
+        type // 1为私聊，2为群聊
       }
     };
 
