@@ -3,8 +3,9 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Chat from './pages/Chat';
 import Profile from './pages/Profile';
-// todo:设置路由拦截，可添加loder函数进行权限校验
-// 1. 登录后才能访问 /chat /profile
+import AuthGuard from './components/AuthGuard';
+// 路由拦截已实现：
+// 1. 登录后才能访问 /chat /profile（通过AuthGuard组件）
 // 2. 未登录才能访问 /register /login
 export const router = createBrowserRouter([
   {
@@ -17,10 +18,18 @@ export const router = createBrowserRouter([
   },
   {
     path: '/chat',
-    element: <Chat />,
+    element: (
+      <AuthGuard>
+        <Chat />
+      </AuthGuard>
+    ),
   },
   {
     path: '/profile',
-    element: <Profile />,
+    element: (
+      <AuthGuard>
+        <Profile />
+      </AuthGuard>
+    ),
   },
 ]);
