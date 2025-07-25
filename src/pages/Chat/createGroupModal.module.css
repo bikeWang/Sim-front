@@ -113,6 +113,7 @@
 .selectedList {
   flex: 1;
   overflow-y: auto;
+  margin-bottom: 16px;
 }
 
 .selectedItem {
@@ -123,13 +124,36 @@
   gap: 12px;
 }
 
+.groupNameSection {
+  padding: 16px 0;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 16px;
+}
+
+.groupNameLabel {
+  display: block;
+  margin-bottom: 8px;
+  padding: 0 12px;
+  color: #374151;
+}
+
+.groupNameInput {
+  border-radius: 12px;
+  height: 40px;
+  margin: 0 12px;
+}
+
+.groupNameInput:focus {
+  box-shadow: none;
+  border-color: #6366f1;
+}
+
 .buttonGroup {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
-  padding: 16px 0 0 0;
-  border-top: 1px solid #e5e7eb;
-  margin-top: 16px;
+  padding: 0;
 }
 
 .createButton {

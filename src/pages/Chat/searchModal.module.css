@@ -50,7 +50,14 @@
   border-bottom: 1px solid #e5e7eb;
 }
 
+.searchInputWrapper {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
 .searchInput {
+  flex: 1;
   border-radius: 16px;
   height: 48px;
   font-size: 16px;
@@ -59,6 +66,19 @@
 .searchInput:focus {
   box-shadow: none;
   border-color: #6366f1;
+}
+
+.searchButton {
+  border-radius: 12px;
+  height: 48px;
+  padding: 0 24px;
+  background: #6366f1;
+  border: none;
+  font-weight: 500;
+}
+
+.searchButton:hover:not(:disabled) {
+  background: #4f46e5;
 }
 
 .resultsSection {
@@ -114,4 +134,63 @@
 .emptyState {
   padding: 24px;
   color: #6b7280;
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  gap: 16px;
+}
+
+.loadingText {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.searchingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  gap: 16px;
+}
+
+.searchingIcon {
+  font-size: 48px;
+  color: #6366f1;
+}
+
+.animatedSearch {
+  animation: searchPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes searchPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+.searchingText {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.recommendedHeader {
+  padding: 0 8px 16px 8px;
+  border-bottom: 1px solid #f3f4f6;
+  margin-bottom: 16px;
+}
+
+.recommendedTitle {
+  color: #374151;
+  font-size: 16px;
 }

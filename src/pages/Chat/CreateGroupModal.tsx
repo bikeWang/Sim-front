@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input, Typography, List, Avatar, Button, Checkbox, message } from 'antd';
 import { SearchOutlined, UserOutlined, CloseOutlined } from '@ant-design/icons';
 import styles from './createGroupModal.module.css';
+import { useWebSocket } from '../../hooks/useWebSocket';
 
 interface Friend {
   id: number;
   name: string;
+  type: 'personal' | 'group';
 }
 
 interface CreateGroupModalProps {
@@ -18,14 +20,24 @@ const { Text } = Typography;
 const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ visible, onClose }) => {
   const [searchValue, setSearchValue] = useState('');
   const [selectedFriends, setSelectedFriends] = useState<Friend[]>([]);
+  const [groupName, setGroupName] = useState('');
+  const { contacts, fetchContacts } = useWebSocket();
   
-  // 模拟好友列表数据
-  const friends: Friend[] = [
-    { id: 1, name: '张三' },
-    { id: 2, name: '李四' },
-    { id: 3, name: '王五' },
-    { id: 4, name: '赵六' },
-  ];
+  // 获取个人联系人列表（排除群组）
+  const friends: Friend[] = contacts
+    .filter(contact => contact.type === 'personal')
+    .map(contact => ({
+      id: contact.id,
+      name: contact.name,
+      type: contact.type
+    }));
+  
+  // 当模态框打开时获取联系人列表
+  useEffect(() => {
+    if (visible) {
+      fetchContacts();
+    }
+  }, [visible, fetchContacts]);
 
   const filteredFriends = friends.filter(friend =>
     friend.name.toLowerCase().includes(searchValue.toLowerCase())
@@ -44,6 +56,17 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ visible, onClose })
       message.warning('请至少选择两个好友');
       return;
     }
+    if (!groupName.trim()) {
+      message.warning('请输入群聊名称');
+      return;
+    }
+    
+    // TODO: 调用创建群聊的API
+    console.log('创建群聊:', {
+      groupName: groupName.trim(),
+      members: selectedFriends
+    });
+    
     message.success({
       content: '群聊创建成功！',
       duration: 2,
@@ -51,6 +74,10 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ visible, onClose })
         marginTop: '64px'
       }
     });
+    
+    // 重置状态
+    setSelectedFriends([]);
+    setGroupName('');
     onClose();
   };
 
@@ -104,12 +131,25 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ visible, onClose })
                 </List.Item>
               )}
             />
+            
+            <div className={styles.groupNameSection}>
+              <Text strong className={styles.groupNameLabel}>群聊名称</Text>
+              <Input
+                placeholder="请输入群聊名称"
+                value={groupName}
+                onChange={(e) => setGroupName(e.target.value)}
+                className={styles.groupNameInput}
+                maxLength={20}
+                showCount
+              />
+            </div>
+            
             <div className={styles.buttonGroup}>
               <Button
                 type="primary"
                 onClick={handleCreateGroup}
                 className={styles.createButton}
-                disabled={selectedFriends.length < 2}
+                disabled={selectedFriends.length < 2 || !groupName.trim()}
               >
                 创建群聊
               </Button>
