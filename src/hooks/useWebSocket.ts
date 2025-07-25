@@ -47,6 +47,7 @@ interface MessageVo {
   receiver: number;
   sender: number;
   userName: string;
+  type?: 1 | 2; // 添加type字段支持
 }
 
 interface WebSocketMessage {
@@ -129,30 +130,29 @@ export const useWebSocket = () => {
         
         // 检查是否是MessageVo格式的消息（直接接收）
         if (data.action && data.content && data.userName && data.gmtCreate) {
-          const messageVo: MessageVo = data;
-          const messageType = messageVo.type || 1;
+          const messageType = data.type || 1;
           
           const newMessage: Message = {
-            id: messageVo.id,
-            sender: messageVo.sender?.toString(),
-            content: messageVo.content,
-            timestamp: messageVo.gmtCreate,
+            id: data.id,
+            sender: data.sender?.toString(),
+            content: data.content,
+            timestamp: data.gmtCreate,
             type: messageType,
-            userName: messageVo.userName,
-            avatar: messageVo.avatar
+            userName: data.userName,
+            avatar: data.avatar
           };
           
           // 根据消息类型设置不同字段
           if (messageType === 2) {
             // 群聊消息：使用groupId字段（从JSON的groupId或receiver字段获取）
-            newMessage.groupId = data.groupId?.toString() || messageVo.receiver?.toString() || '';
+            newMessage.groupId = data.groupId?.toString() || data.receiver?.toString() || '';
           } else {
             // 私聊消息：使用receiver字段
-            newMessage.receiver = messageVo.receiver?.toString();
+            newMessage.receiver = data.receiver?.toString();
           }
           
           console.log('接收到新消息(MessageVo):', {
-             原始数据: messageVo,
+             原始数据: data,
              解析后消息: newMessage,
              当前用户ID: localStorage.getItem('userId'),
              当前用户名: localStorage.getItem('userName'),
@@ -168,7 +168,7 @@ export const useWebSocket = () => {
              contactId = newMessage.groupId || '';
            } else {
              // 私聊消息：联系人ID是对方的用户ID
-             contactId = newMessage.sender === currentUserId ? newMessage.receiver : newMessage.sender;
+             contactId = newMessage.sender === currentUserId ? (newMessage.receiver || '') : (newMessage.sender || '');
            }
            
            if (contactId) {
@@ -390,13 +390,21 @@ export const useWebSocket = () => {
     // 立即添加消息到本地状态（发送者视角）
     const newMessage: Message = {
       id: Date.now(), // 临时ID，后续可以用服务器返回的真实ID替换
-      sender: userName || userId,
-      receiver: receiverId.toString(),
+      sender: userName || userId || '',
       content,
       timestamp: new Date().toISOString(),
       type,
-      userName
+      userName: userName || undefined
     };
+    
+    // 根据消息类型设置不同字段
+    if (type === 2) {
+      // 群聊消息：使用groupId字段
+      newMessage.groupId = receiverId.toString();
+    } else {
+      // 私聊消息：使用receiver字段
+      newMessage.receiver = receiverId.toString();
+    }
     
     // 根据消息类型确定联系人ID
     // 对于群聊(type=2)，联系人ID就是群组ID(receiverId)
