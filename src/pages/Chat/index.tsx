@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Layout, List, Input, Button, Avatar, Typography, Dropdown, Space } from 'antd';
 import EmojiPicker from './EmojiPicker';
 import DetailDrawer from './DetailDrawer';
@@ -41,27 +41,31 @@ const Chat: React.FC = () => {
   const [createGroupModalVisible, setCreateGroupModalVisible] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // 使用WebSocket hook
   const {
     isConnected,
     messages,
-    contactMessages,
     currentContactId,
     sendMessage,
     setSelectedContact: setWebSocketSelectedContact,
     fetchContacts,
     contacts,
     logout: webSocketLogout,
-    fetchGroupMembers
+    fetchGroupMembers,
+    clearNewMessageStatus,
+    newMessageContacts
   } = useWebSocket();
   
+  // 滚动到消息底部
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   // 当选中联系人或消息变化时，滚动到底部
   useEffect(() => {
-    const messageList = document.querySelector(`.${styles.messageList}`);
-    if (messageList) {
-      messageList.scrollTop = messageList.scrollHeight;
-    }
+    scrollToBottom();
   }, [selectedContact, messages]);
 
   // 初始化数据
@@ -191,7 +195,13 @@ const Chat: React.FC = () => {
                        name: member.userName
                      }))
                    });
-                   setWebSocketSelectedContact(contact.id.toString());
+                   // 清除该联系人的新消息状态，传递联系人类型
+                   clearNewMessageStatus(contact.id.toString(), contact.type);
+                   setWebSocketSelectedContact(contact.id.toString(), contact.type);
+                   // 延迟滚动到底部，确保消息已加载
+                   setTimeout(() => {
+                     scrollToBottom();
+                   }, 100);
                  }}
                 className={`${styles.contactItem} ${selectedContact?.id === contact.id ? styles.selected : ''}`}
               >
@@ -203,6 +213,9 @@ const Chat: React.FC = () => {
                       <Avatar icon={<TeamOutlined />} style={{ backgroundColor: '#52c41a' }} />
                     )}
                     {contact.type === 'personal' && contact.online && <div className={styles.onlineStatus} />}
+                    {contact.hasNewMessage && (
+                      <div className={styles.newMessageDot}></div>
+                    )}
                   </div>
                   <div className={styles.contactDetails}>
                     <div className={styles.nameContainer}>
@@ -292,6 +305,8 @@ const Chat: React.FC = () => {
                     </div>
                    );
                 })}
+                {/* 消息底部锚点 */}
+                <div ref={messagesEndRef} />
             </div>
           </Content>
           <div className={styles.inputArea}>

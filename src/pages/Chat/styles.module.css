@@ -169,6 +169,28 @@
   border: 2px solid #fff;
 }
 
+.newMessageDot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  background-color: #ff4d4f;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  animation: blink 1s infinite;
+  z-index: 1;
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0.3;
+  }
+}
+
 .contactDetails {
   display: flex;
   flex-direction: column;

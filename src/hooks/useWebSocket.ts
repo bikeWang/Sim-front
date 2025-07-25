@@ -22,6 +22,7 @@ interface Contact {
   type: 'personal' | 'group';
   phone?: string;
   members?: { userId: number; userName: string }[];
+  hasNewMessage?: boolean; // 新增：是否有新消息
 }
 
 interface GroupMember {
@@ -90,6 +91,8 @@ export const useWebSocket = () => {
     return currentContactId ? (contactMessages.get(currentContactId) || []) : [];
   }, [contactMessages, currentContactId]);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  // 新增：跟踪哪些联系人有新消息，使用 "type:id" 格式避免ID冲突
+  const [newMessageContacts, setNewMessageContacts] = useState<Set<string>>(new Set());
   const { message } = App.useApp();
 
   const connect = useCallback(() => {
@@ -178,6 +181,23 @@ export const useWebSocket = () => {
                newMap.set(contactId, [...existingMessages, newMessage]);
                return newMap;
              });
+             
+             // 如果不是当前选中的联系人，标记为有新消息
+             if (contactId !== currentContactId) {
+               // 根据消息类型确定联系人类型标识符
+               const contactType = newMessage.type === 2 ? 'group' : 'personal';
+               const contactKey = `${contactType}:${contactId}`;
+               
+               setNewMessageContacts(prev => new Set(prev).add(contactKey));
+               // 更新联系人列表中的新消息状态
+               setContacts(prevContacts => 
+                 prevContacts.map(contact => 
+                   contact.id.toString() === contactId && contact.type === contactType
+                     ? { ...contact, hasNewMessage: true }
+                     : contact
+                 )
+               );
+             }
            }
           return;
         }
@@ -209,13 +229,28 @@ export const useWebSocket = () => {
                  const contactId = newMessage.sender === currentUserId ? newMessage.receiver : newMessage.sender;
                  
                  if (contactId) {
-                   setContactMessages(prev => {
-                     const newMap = new Map(prev);
-                     const existingMessages = newMap.get(contactId) || [];
-                     newMap.set(contactId, [...existingMessages, newMessage]);
-                     return newMap;
-                   });
+                 setContactMessages(prev => {
+                   const newMap = new Map(prev);
+                   const existingMessages = newMap.get(contactId) || [];
+                   newMap.set(contactId, [...existingMessages, newMessage]);
+                   return newMap;
+                 });
+                 
+                 // 如果不是当前选中的联系人，标记为有新消息
+                 if (contactId !== currentContactId) {
+                   const contactKey = `personal:${contactId}`;
+                   
+                   setNewMessageContacts(prev => new Set(prev).add(contactKey));
+                   // 更新联系人列表中的新消息状态
+                   setContacts(prevContacts => 
+                     prevContacts.map(contact => 
+                       contact.id.toString() === contactId && contact.type === 'personal'
+                         ? { ...contact, hasNewMessage: true }
+                         : contact
+                     )
+                   );
                  }
+               }
               }
             } else if (data.type === 2) {
               // 群聊消息处理（使用新的数据格式）
@@ -248,6 +283,21 @@ export const useWebSocket = () => {
                    newMap.set(contactId, [...existingMessages, newMessage]);
                    return newMap;
                  });
+                 
+                 // 如果不是当前选中的联系人，标记为有新消息
+                 if (contactId !== currentContactId) {
+                   const contactKey = `group:${contactId}`;
+                   
+                   setNewMessageContacts(prev => new Set(prev).add(contactKey));
+                   // 更新联系人列表中的新消息状态
+                   setContacts(prevContacts => 
+                     prevContacts.map(contact => 
+                       contact.id.toString() === contactId && contact.type === 'group'
+                         ? { ...contact, hasNewMessage: true }
+                         : contact
+                     )
+                   );
+                 }
                }
             }
             break;
@@ -509,11 +559,52 @@ export const useWebSocket = () => {
     }
   }, [contactMessages, message]);
   
+  // 清除指定联系人的新消息状态
+  const clearNewMessageStatus = useCallback((contactId: string, contactType?: string) => {
+    // 如果没有指定类型，则清除所有类型的该ID
+    if (!contactType) {
+      setNewMessageContacts(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(`personal:${contactId}`);
+        newSet.delete(`group:${contactId}`);
+        return newSet;
+      });
+      
+      // 更新联系人列表中的新消息状态
+      setContacts(prevContacts => 
+        prevContacts.map(contact => 
+          contact.id.toString() === contactId 
+            ? { ...contact, hasNewMessage: false }
+            : contact
+        )
+      );
+    } else {
+      // 清除指定类型的联系人
+      const contactKey = `${contactType}:${contactId}`;
+      setNewMessageContacts(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(contactKey);
+        return newSet;
+      });
+      
+      // 更新联系人列表中的新消息状态
+      setContacts(prevContacts => 
+        prevContacts.map(contact => 
+          contact.id.toString() === contactId && contact.type === contactType
+            ? { ...contact, hasNewMessage: false }
+            : contact
+        )
+      );
+    }
+  }, []);
+
   // 设置当前选中的联系人并加载其历史消息
-  const setSelectedContact = useCallback(async (contactId: string) => {
+  const setSelectedContact = useCallback(async (contactId: string, contactType?: string) => {
     setCurrentContactId(contactId);
+    // 清除该联系人的新消息状态
+    clearNewMessageStatus(contactId, contactType);
     await fetchHistoryMessages(contactId);
-  }, [fetchHistoryMessages]);
+  }, [fetchHistoryMessages, clearNewMessageStatus]);
 
   // 获取联系人列表
   const fetchContacts = useCallback(async () => {
@@ -617,6 +708,8 @@ export const useWebSocket = () => {
     fetchContacts,
     contacts,
     logout, // 用户下线功能
-    fetchGroupMembers // 获取群成员列表
+    fetchGroupMembers, // 获取群成员列表
+    clearNewMessageStatus, // 清除新消息状态
+    newMessageContacts // 有新消息的联系人集合
   };
 };
