@@ -4,7 +4,8 @@ import { App } from 'antd';
 interface Message {
   id: number;
   sender: string;
-  receiver?: string;
+  receiver?: string; // 私聊时使用
+  groupId?: string; // 群聊时使用
   content: string;
   timestamp: string;
   type?: 1 | 2; // 1为私聊，2为群聊
@@ -129,26 +130,46 @@ export const useWebSocket = () => {
         // 检查是否是MessageVo格式的消息（直接接收）
         if (data.action && data.content && data.userName && data.gmtCreate) {
           const messageVo: MessageVo = data;
+          const messageType = messageVo.type || 1;
+          
           const newMessage: Message = {
             id: messageVo.id,
             sender: messageVo.sender?.toString(),
-            receiver: messageVo.receiver?.toString(),
             content: messageVo.content,
             timestamp: messageVo.gmtCreate,
-            type: 1, // 默认为私聊
+            type: messageType,
             userName: messageVo.userName,
             avatar: messageVo.avatar
           };
+          
+          // 根据消息类型设置不同字段
+          if (messageType === 2) {
+            // 群聊消息：使用groupId字段（从JSON的groupId或receiver字段获取）
+            newMessage.groupId = data.groupId?.toString() || messageVo.receiver?.toString() || '';
+          } else {
+            // 私聊消息：使用receiver字段
+            newMessage.receiver = messageVo.receiver?.toString();
+          }
+          
           console.log('接收到新消息(MessageVo):', {
              原始数据: messageVo,
              解析后消息: newMessage,
              当前用户ID: localStorage.getItem('userId'),
-             当前用户名: localStorage.getItem('userName')
+             当前用户名: localStorage.getItem('userName'),
+             消息类型: newMessage.type === 2 ? '群聊' : '私聊'
            });
            
-           // 确定消息所属的联系人ID
+           // 根据消息类型确定联系人ID
            const currentUserId = localStorage.getItem('userId');
-           const contactId = newMessage.sender === currentUserId ? newMessage.receiver : newMessage.sender;
+           let contactId: string;
+           
+           if (newMessage.type === 2) {
+             // 群聊消息：联系人ID就是群组ID
+             contactId = newMessage.groupId || '';
+           } else {
+             // 私聊消息：联系人ID是对方的用户ID
+             contactId = newMessage.sender === currentUserId ? newMessage.receiver : newMessage.sender;
+           }
            
            if (contactId) {
              setContactMessages(prev => {
@@ -165,25 +186,60 @@ export const useWebSocket = () => {
         const wsMessage: WebSocketMessage = data;
         switch (wsMessage.action) {
           case 2: // 聊天消息
-            if (wsMessage.chatMsg) {
+            // 检查消息类型，区分单聊和群聊处理逻辑
+            if (data.type === 1) {
+              // 单聊消息处理（保持原有逻辑）
+              if (wsMessage.chatMsg) {
+                const newMessage: Message = {
+                  id: Date.now(),
+                  sender: wsMessage.chatMsg.senderId.toString(),
+                  receiver: wsMessage.chatMsg.receiverId.toString(),
+                  content: wsMessage.chatMsg.message,
+                  timestamp: new Date().toISOString(),
+                  type: 1,
+                  userName: wsMessage.userName
+                };
+                console.log('接收到单聊消息:', {
+                   原始数据: wsMessage,
+                   解析后消息: newMessage
+                 });
+                 
+                 // 单聊消息：联系人ID是对方的用户ID
+                 const currentUserId = localStorage.getItem('userId');
+                 const contactId = newMessage.sender === currentUserId ? newMessage.receiver : newMessage.sender;
+                 
+                 if (contactId) {
+                   setContactMessages(prev => {
+                     const newMap = new Map(prev);
+                     const existingMessages = newMap.get(contactId) || [];
+                     newMap.set(contactId, [...existingMessages, newMessage]);
+                     return newMap;
+                   });
+                 }
+              }
+            } else if (data.type === 2) {
+              // 群聊消息处理（使用新的数据格式）
+              // 直接使用groupId字段
+              const groupId = data.groupId?.toString() || '';
               const newMessage: Message = {
-                id: Date.now(), // 临时ID，实际应该从服务器获取
-                sender: wsMessage.chatMsg.senderId.toString(),
-                receiver: wsMessage.chatMsg.receiverId.toString(),
-                content: wsMessage.chatMsg.message,
-                timestamp: new Date().toISOString(),
-                type: wsMessage.chatMsg.type
+                id: data.id || Date.now(),
+                sender: data.sender?.toString() || '',
+                groupId: groupId, // 群聊消息使用groupId字段
+                content: data.content || '',
+                timestamp: data.gmtCreate || new Date().toISOString(),
+                type: 2,
+                userName: data.userName || ''
               };
-              console.log('接收到新消息(chatMsg):', {
-                 原始数据: wsMessage,
+              console.log('接收到群聊消息:', {
+                 原始数据: data,
                  解析后消息: newMessage,
-                 当前用户ID: localStorage.getItem('userId'),
-                 当前用户名: localStorage.getItem('userName')
+                 群组ID: data.groupId,
+                 发送者: data.userName,
+                 groupId字段: newMessage.groupId
                });
                
-               // 确定消息所属的联系人ID
-               const currentUserId = localStorage.getItem('userId');
-               const contactId = newMessage.sender === currentUserId ? newMessage.receiver : newMessage.sender;
+               // 群聊消息：联系人ID就是群组ID
+               const contactId = groupId;
                
                if (contactId) {
                  setContactMessages(prev => {
@@ -338,10 +394,13 @@ export const useWebSocket = () => {
       receiver: receiverId.toString(),
       content,
       timestamp: new Date().toISOString(),
-      type
+      type,
+      userName
     };
     
-    // 添加到对应联系人的消息列表
+    // 根据消息类型确定联系人ID
+    // 对于群聊(type=2)，联系人ID就是群组ID(receiverId)
+    // 对于私聊(type=1)，联系人ID是对方的用户ID(receiverId)
     const contactId = receiverId.toString();
     setContactMessages(prev => {
       const newMap = new Map(prev);
@@ -359,6 +418,12 @@ export const useWebSocket = () => {
         type // 1为私聊，2为群聊
       }
     };
+
+    console.log('发送群聊消息:', {
+      messageData,
+      contactId,
+      type: type === 2 ? '群聊' : '私聊'
+    });
 
     ws.current.send(JSON.stringify(messageData));
   }, [message]);

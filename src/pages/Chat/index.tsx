@@ -183,7 +183,12 @@ const Chat: React.FC = () => {
             )}
             renderItem={(contact) => (
               <List.Item
-                onClick={() => {
+                onClick={async () => {
+                   // 如果是群聊，先加载群成员信息
+                   if (contact.type === 'group') {
+                     await fetchGroupMembers(contact.id);
+                   }
+                   
                    setSelectedContact({
                      ...contact,
                      members: contact.members?.map(member => ({
@@ -279,7 +284,8 @@ const Chat: React.FC = () => {
                       className={`${styles.messageItem} ${isSentByMe ? styles.sent : styles.received}`}
                     >
                       <div className={styles.messageContent}>
-                        {!isSentByMe && (
+                        {/* 群聊消息始终显示发送者用户名，私聊消息只在接收时显示 */}
+                        {(selectedContact?.type === 'group' || !isSentByMe) && (
                           <Text type="secondary" className={styles.senderName}>
                             {msg.userName || msg.sender}
                           </Text>
