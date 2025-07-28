@@ -18,9 +18,10 @@ interface DetailDrawerProps {
   } | null;
   onFetchGroupMembers?: (groupId: number) => Promise<{ userId: number; userName: string }[]>;
   onDeleteFriend?: (friendId: number) => void; // 删除好友成功后的回调函数
+  onDeleteGroup?: (groupId: number) => void; // 删除群聊成功后的回调函数
 }
 
-const DetailDrawer: React.FC<DetailDrawerProps> = ({ visible, onClose, contact, onFetchGroupMembers, onDeleteFriend }) => {
+const DetailDrawer: React.FC<DetailDrawerProps> = ({ visible, onClose, contact, onFetchGroupMembers, onDeleteFriend, onDeleteGroup }) => {
   const { modal } = App.useApp();
   
   // 当群聊详情打开时，自动获取群成员列表
@@ -59,6 +60,31 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ visible, onClose, contact, 
     }
   };
 
+  // 删除群聊API调用函数
+  const deleteGroup = async (userId: number, groupId: number) => {
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+        message.error('用户未登录');
+        return false;
+      }
+
+      const data = await del(`/api/user-info/group/outGroup?userId=${userId}&groupId=${groupId}`);
+      
+      if (data.code === 200) {
+        message.success('删除群聊成功');
+        return true;
+      } else {
+        message.error(data.message || '删除群聊失败');
+        return false;
+      }
+    } catch (error) {
+      console.error('删除群聊请求失败:', error);
+      message.error('网络错误，删除群聊失败');
+      return false;
+    }
+  };
+
   const handleDelete = () => {
     modal.confirm({
       title: '确认删除',
@@ -93,8 +119,21 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ visible, onClose, contact, 
              onClose();
            }
         } else {
-          // 删除群聊逻辑（暂时保持原有逻辑）
-          onClose();
+          // 删除群聊逻辑
+          const currentUserId = localStorage.getItem('userId');
+          if (!currentUserId) {
+            message.error('用户信息不完整');
+            return;
+          }
+          
+          const success = await deleteGroup(parseInt(currentUserId), contact.id);
+          if (success) {
+            // 调用回调函数刷新联系人列表
+            if (onDeleteGroup) {
+              onDeleteGroup(contact.id);
+            }
+            onClose();
+          }
         }
       }
     });

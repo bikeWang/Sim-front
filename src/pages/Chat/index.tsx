@@ -105,6 +105,17 @@ const Chat: React.FC = () => {
     fetchContacts();
   };
 
+  // 处理删除群聊
+  const handleDeleteGroup = (groupId: number) => {
+    // 如果删除的是当前选中的联系人，清空选中状态
+    if (selectedContact && selectedContact.id === groupId) {
+      setSelectedContact(null);
+      setWebSocketSelectedContact('', 'group');
+    }
+    // 刷新联系人列表
+    fetchContacts();
+  };
+
   const handleSend = () => {
     if (messageInput.trim() && selectedContact && isConnected) {
       // 根据联系人类型确定消息类型：1为私聊，2为群聊
@@ -382,6 +393,7 @@ const Chat: React.FC = () => {
         } : null}
         onFetchGroupMembers={fetchGroupMembers}
         onDeleteFriend={handleDeleteFriend}
+        onDeleteGroup={handleDeleteGroup}
       />
       <ProfileModal
         visible={profileModalVisible}
