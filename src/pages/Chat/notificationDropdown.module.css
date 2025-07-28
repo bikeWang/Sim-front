@@ -96,14 +96,31 @@
 
 @keyframes bellShake {
   0% { transform: rotate(0); }
-  15% { transform: rotate(5deg); }
+  10% { transform: rotate(-15deg); }
+  20% { transform: rotate(10deg); }
   30% { transform: rotate(-5deg); }
-  45% { transform: rotate(4deg); }
-  60% { transform: rotate(-4deg); }
-  75% { transform: rotate(2deg); }
-  85% { transform: rotate(-2deg); }
-  92% { transform: rotate(1deg); }
+  40% { transform: rotate(5deg); }
+  50% { transform: rotate(0); }
   100% { transform: rotate(0); }
+}
+
+.headerActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 8px;
+}
+
+.clearAllButton {
+  color: #6366f1;
+  font-size: 12px;
+  transition: opacity 0.3s ease;
+}
+
+.clearAllButton:hover {
+  opacity: 0.8;
 }
 
 :global(.ant-badge-dot) {

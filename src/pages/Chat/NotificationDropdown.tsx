@@ -5,16 +5,20 @@ import styles from './notificationDropdown.module.css';
 
 interface NotificationItem {
   id: number;
-  type: 'friend' | 'group';
+  type: 'friend' | 'group' | 'group_invite';
   title: string;
   description: string;
   timestamp: string;
+  groupName?: string;
+  senderId?: number;
 }
 
 interface NotificationDropdownProps {
   notifications: NotificationItem[];
-  onAccept: (id: number, type: 'friend' | 'group') => void;
-  onReject: (id: number, type: 'friend' | 'group') => void;
+  onAccept?: (id: number, type: 'friend' | 'group' | 'group_invite') => void;
+  onReject?: (id: number, type: 'friend' | 'group' | 'group_invite') => void;
+  onClear?: (id: number) => void;
+  onClearAll?: () => void;
 }
 
 const { Text } = Typography;
@@ -23,13 +27,58 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   notifications,
   onAccept,
   onReject,
+  onClear,
+  onClearAll,
 }) => {
-  const friendRequests = notifications.filter(item => item.type === 'friend');
-  const groupRequests = notifications.filter(item => item.type === 'group');
-  const hasNotifications = notifications.length > 0;
+  // 按时间排序，新消息在前面
+  const sortedNotifications = [...notifications].sort((a, b) => 
+    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
+  
+  const friendRequests = sortedNotifications.filter(item => item.type === 'friend');
+  const groupRequests = sortedNotifications.filter(item => item.type === 'group');
+  const groupInvites = sortedNotifications.filter(item => item.type === 'group_invite');
+  const hasNotifications = sortedNotifications.length > 0;
 
   const dropdownContent = (
     <div className={styles.notificationContainer}>
+      {hasNotifications && (
+        <div className={styles.headerActions}>
+          <Text strong>通知</Text>
+          {onClearAll && (
+            <a onClick={onClearAll} className={styles.clearAllButton}>清空全部</a>
+          )}
+        </div>
+      )}
+      
+      {groupInvites.length > 0 && (
+        <div className={styles.notificationSection}>
+          <div className={styles.sectionHeader}>
+            <TeamOutlined />
+            <Text strong>群聊通知</Text>
+          </div>
+          <List
+            dataSource={groupInvites}
+            renderItem={item => (
+              <List.Item className={styles.notificationItem}>
+                <div className={styles.notificationContent}>
+                  <Text strong>{item.title}</Text>
+                  <Text type="secondary">{item.description}</Text>
+                  <Text type="secondary" className={styles.timestamp}>
+                    {new Date(item.timestamp).toLocaleString()}
+                  </Text>
+                </div>
+                <div className={styles.actionButtons}>
+                  {onClear && (
+                    <a onClick={() => onClear(item.id)}>知道了</a>
+                  )}
+                </div>
+              </List.Item>
+            )}
+          />
+        </div>
+      )}
+      
       {friendRequests.length > 0 && (
         <div className={styles.notificationSection}>
           <div className={styles.sectionHeader}>
@@ -43,11 +92,13 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                 <div className={styles.notificationContent}>
                   <Text strong>{item.title}</Text>
                   <Text type="secondary">{item.description}</Text>
-                  <Text type="secondary" className={styles.timestamp}>{item.timestamp}</Text>
+                  <Text type="secondary" className={styles.timestamp}>
+                    {new Date(item.timestamp).toLocaleString()}
+                  </Text>
                 </div>
                 <div className={styles.actionButtons}>
-                  <a onClick={() => onAccept(item.id, 'friend')}>接受</a>
-                  <a onClick={() => onReject(item.id, 'friend')}>拒绝</a>
+                  {onAccept && <a onClick={() => onAccept(item.id, 'friend')}>接受</a>}
+                  {onReject && <a onClick={() => onReject(item.id, 'friend')}>拒绝</a>}
                 </div>
               </List.Item>
             )}
@@ -68,11 +119,13 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                 <div className={styles.notificationContent}>
                   <Text strong>{item.title}</Text>
                   <Text type="secondary">{item.description}</Text>
-                  <Text type="secondary" className={styles.timestamp}>{item.timestamp}</Text>
+                  <Text type="secondary" className={styles.timestamp}>
+                    {new Date(item.timestamp).toLocaleString()}
+                  </Text>
                 </div>
                 <div className={styles.actionButtons}>
-                  <a onClick={() => onAccept(item.id, 'group')}>加入</a>
-                  <a onClick={() => onReject(item.id, 'group')}>拒绝</a>
+                  {onAccept && <a onClick={() => onAccept(item.id, 'group')}>加入</a>}
+                  {onReject && <a onClick={() => onReject(item.id, 'group')}>拒绝</a>}
                 </div>
               </List.Item>
             )}

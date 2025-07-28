@@ -25,6 +25,16 @@ interface Contact {
   hasNewMessage?: boolean; // 新增：是否有新消息
 }
 
+interface NotificationItem {
+  id: number;
+  type: 'group_invite';
+  title: string;
+  description: string;
+  timestamp: string;
+  groupName?: string;
+  senderId?: number;
+}
+
 interface GroupMember {
   userId: number;
   userName: string;
@@ -93,6 +103,8 @@ export const useWebSocket = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   // 新增：跟踪哪些联系人有新消息，使用 "type:id" 格式避免ID冲突
   const [newMessageContacts, setNewMessageContacts] = useState<Set<string>>(new Set());
+  // 新增：通知列表状态
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const { message } = App.useApp();
 
   const connect = useCallback(() => {
@@ -301,14 +313,113 @@ export const useWebSocket = () => {
                }
             }
             break;
-          case 3: // 用户状态更新
-            if (wsMessage.data) {
-              setContacts(wsMessage.data);
+          case 3: // 用户状态更新（用户上线提示）
+            console.log('收到用户状态更新消息:', wsMessage);
+            console.log('wsMessage.data:', wsMessage.data);
+            
+            // 尝试从不同位置获取userId和status
+            let userId, status;
+            if (wsMessage.data && wsMessage.data.userId) {
+              userId = wsMessage.data.userId.toString();
+              status = wsMessage.data.status;
+            } else if (wsMessage.userId) {
+              // 如果数据在顶层
+              userId = wsMessage.userId.toString();
+              status = wsMessage.status;
+            }
+            
+            console.log('解析到的userId:', userId, 'status:', status);
+            
+            if (userId !== undefined && status !== undefined) {
+              
+              // 更新联系人列表中对应用户的在线状态
+              setContacts(prevContacts => {
+                console.log('当前联系人列表:', prevContacts);
+                const updatedContacts = prevContacts.map(contact => {
+                  // 对于个人联系人，检查contact.id是否匹配userId
+                  if (contact.type === 'personal' && contact.id.toString() === userId) {
+                    console.log('找到匹配的联系人:', contact.name, '更新状态为:', status);
+                    return { ...contact, online: status };
+                  }
+                  return contact;
+                });
+                
+                console.log('更新后的联系人列表:', updatedContacts);
+                
+                // 在更新联系人状态后显示提示
+                const contact = prevContacts.find(c => c.type === 'personal' && c.id.toString() === userId);
+                const userName = contact?.name || `用户${userId}`;
+                
+                if (status) {
+                  message.info(`${userName} 已上线`);
+                } else {
+                  message.info(`${userName} 已下线`);
+                }
+                
+                return updatedContacts;
+              });
+            } else {
+              console.log('消息格式不正确，无法解析userId或status');
             }
             break;
           case 4: // 通知
             if (wsMessage.data) {
               message.info(wsMessage.data.content || wsMessage.data.message);
+            }
+            break;
+          case 5: // 创建群聊响应
+            if (data.type === true) {
+              const currentUserId = localStorage.getItem('userId');
+              const senderId = data.senderId;
+              
+              // 判断senderId是否与当前用户一致
+              if (senderId && currentUserId && senderId.toString() === currentUserId) {
+                // 当前用户创建的群聊，保持现有逻辑
+                message.success('群聊创建成功');
+                // 将新群组添加到联系人列表
+                if (data.group) {
+                  const newGroup: Contact = {
+                    id: data.group.groupId || data.group.id,
+                    name: data.group.groupName || data.group.name,
+                    type: 'group',
+                    avatar: data.group.avatar || '',
+                    hasNewMessage: false
+                  };
+                  setContacts(prev => [...prev, newGroup]);
+                  console.log('新群组已添加到联系人列表:', newGroup);
+                }
+              } else {
+                // 被其他用户拉入群聊，添加到通知列表
+                if (data.group) {
+                  const groupName = data.group.groupName || data.group.name;
+                  const newNotification: NotificationItem = {
+                    id: Date.now(),
+                    type: 'group_invite',
+                    title: '群聊邀请',
+                    description: `你已被拉入${groupName}的群`,
+                    timestamp: new Date().toISOString(),
+                    groupName: groupName,
+                    senderId: senderId
+                  };
+                  
+                  // 新消息永远在前面
+                  setNotifications(prev => [newNotification, ...prev]);
+                  
+                  // 同时将群组添加到联系人列表
+                  const newGroup: Contact = {
+                    id: data.group.groupId || data.group.id,
+                    name: groupName,
+                    type: 'group',
+                    avatar: data.group.avatar || '',
+                    hasNewMessage: false
+                  };
+                  setContacts(prev => [...prev, newGroup]);
+                  
+                  console.log('收到群聊邀请通知:', newNotification);
+                }
+              }
+            } else {
+              message.error(data.message || '创建群聊失败');
             }
             break;
           case 1: // 连接确认
@@ -365,6 +476,20 @@ export const useWebSocket = () => {
     }
 
     if (ws.current?.readyState === WebSocket.OPEN) {
+      // 在关闭连接前发送用户下线状态消息
+      const userId = localStorage.getItem('userId');
+      if (userId) {
+        const offlineMessage = {
+          action: 3,
+          chatMsg: {
+            status: false,
+            userId: parseInt(userId)
+          }
+        };
+        console.log('发送用户下线消息:', offlineMessage);
+        ws.current.send(JSON.stringify(offlineMessage));
+      }
+      
       ws.current.close();
     }
     ws.current = null;
@@ -423,6 +548,33 @@ export const useWebSocket = () => {
       return false;
     }
   }, [disconnect, message]);
+
+  // 创建群聊功能
+  const createGroup = useCallback((groupName: string, memberIds: number[]) => {
+    if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
+      message.error('未连接到聊天服务器');
+      return;
+    }
+
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      message.error('用户未登录');
+      return;
+    }
+
+    const messageData = {
+      action: 5, // 创建群聊动作
+      chatMsg: {
+        type: 2, // 1表示通知，2表示创建群聊请求，3表示加入群聊请求
+        groupName: groupName,
+        memberIds: memberIds,
+        senderId: parseInt(userId)
+      }
+    };
+
+    console.log('发送创建群聊消息:', messageData);
+    ws.current.send(JSON.stringify(messageData));
+  }, [message]);
 
   const sendMessage = useCallback((content: string, receiverId: number, type: 1 | 2 = 1) => {
     if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
@@ -622,9 +774,11 @@ export const useWebSocket = () => {
         }
       );
       const data = await response.json();
+      console.log('获取联系人列表响应:', data);
       if (data.code === 200) {
         // 转换新的数据结构为应用所需的联系人格式
         const formattedContacts = data.data.map((item: any) => {
+          console.log('处理联系人数据:', item);
           if (item.type) { // 群组类型
             return {
               id: item.group.groupId,
@@ -635,7 +789,7 @@ export const useWebSocket = () => {
               members: [] // 可以在需要时获取群组成员
             };
           } else { // 个人联系人类型
-            return {
+            const contact = {
               id: item.userVo.user.userId,
               name: item.userVo.user.userName,
               lastMessage: '',
@@ -644,8 +798,11 @@ export const useWebSocket = () => {
               type: 'personal',
               phone: '' // 可以在需要时添加电话信息
             };
+            console.log('创建个人联系人:', contact);
+            return contact;
           }
         });
+        console.log('格式化后的联系人列表:', formattedContacts);
         setContacts(formattedContacts);
       }
     } catch (error) {
@@ -697,6 +854,16 @@ export const useWebSocket = () => {
     }
   }, [message]);
 
+  // 清除通知
+  const clearNotification = useCallback((notificationId: number) => {
+    setNotifications(prev => prev.filter(notification => notification.id !== notificationId));
+  }, []);
+
+  // 清除所有通知
+  const clearAllNotifications = useCallback(() => {
+    setNotifications([]);
+  }, []);
+
   return {
     isConnected,
     messages, // 当前选中联系人的消息
@@ -710,6 +877,10 @@ export const useWebSocket = () => {
     logout, // 用户下线功能
     fetchGroupMembers, // 获取群成员列表
     clearNewMessageStatus, // 清除新消息状态
-    newMessageContacts // 有新消息的联系人集合
+    newMessageContacts, // 有新消息的联系人集合
+    createGroup, // 创建群聊功能
+    notifications, // 通知列表
+    clearNotification, // 清除单个通知
+    clearAllNotifications // 清除所有通知
   };
 };

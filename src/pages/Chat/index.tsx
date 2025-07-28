@@ -55,8 +55,21 @@ const Chat: React.FC = () => {
     logout: webSocketLogout,
     fetchGroupMembers,
     clearNewMessageStatus,
-    newMessageContacts
+    newMessageContacts,
+    notifications,
+    clearNotification,
+    clearAllNotifications
   } = useWebSocket();
+
+  // 同步更新selectedContact的在线状态
+  useEffect(() => {
+    if (selectedContact && selectedContact.type === 'personal') {
+      const updatedContact = contacts.find(c => c.id === selectedContact.id);
+      if (updatedContact && updatedContact.online !== selectedContact.online) {
+        setSelectedContact(prev => prev ? { ...prev, online: updatedContact.online } : null);
+      }
+    }
+  }, [contacts, selectedContact]);
   
   // 滚动到消息底部
   const scrollToBottom = () => {
@@ -140,9 +153,11 @@ const Chat: React.FC = () => {
               </div>
             </div>
             <NotificationDropdown
-              notifications={[]}
+              notifications={notifications}
               onAccept={handleAcceptRequest}
               onReject={handleRejectRequest}
+              onClear={clearNotification}
+              onClearAll={clearAllNotifications}
             />
           </div>
           <div className={styles.searchBox}>

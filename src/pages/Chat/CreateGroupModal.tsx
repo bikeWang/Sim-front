@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Input, Typography, List, Avatar, Button, Checkbox, message } from 'antd';
 import { SearchOutlined, UserOutlined, CloseOutlined } from '@ant-design/icons';
+import { useSelector } from 'react-redux';
 import styles from './createGroupModal.module.css';
 import { useWebSocket } from '../../hooks/useWebSocket';
+import type { RootState } from '../../store';
 
 interface Friend {
   id: number;
@@ -21,7 +23,9 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ visible, onClose })
   const [searchValue, setSearchValue] = useState('');
   const [selectedFriends, setSelectedFriends] = useState<Friend[]>([]);
   const [groupName, setGroupName] = useState('');
-  const { contacts, fetchContacts } = useWebSocket();
+  const [isCreating, setIsCreating] = useState(false);
+  const { contacts, fetchContacts, createGroup } = useWebSocket();
+  const currentUser = useSelector((state: RootState) => state.user);
   
   // 获取个人联系人列表（排除群组）
   const friends: Friend[] = contacts
@@ -61,23 +65,18 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ visible, onClose })
       return;
     }
     
-    // TODO: 调用创建群聊的API
-    console.log('创建群聊:', {
-      groupName: groupName.trim(),
-      members: selectedFriends
-    });
+    setIsCreating(true);
     
-    message.success({
-      content: '群聊创建成功！',
-      duration: 2,
-      style: {
-        marginTop: '64px'
-      }
-    });
+    // 使用WebSocket创建群聊
+    createGroup(
+      groupName.trim(),
+      selectedFriends.map(friend => friend.id)
+    );
     
-    // 重置状态
+    // 重置状态并关闭模态框
     setSelectedFriends([]);
     setGroupName('');
+    setIsCreating(false);
     onClose();
   };
 
@@ -149,9 +148,10 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ visible, onClose })
                 type="primary"
                 onClick={handleCreateGroup}
                 className={styles.createButton}
-                disabled={selectedFriends.length < 2 || !groupName.trim()}
+                disabled={selectedFriends.length < 2 || !groupName.trim() || isCreating}
+                loading={isCreating}
               >
-                创建群聊
+                {isCreating ? '创建中...' : '创建群聊'}
               </Button>
               <Button onClick={onClose}>取消</Button>
             </div>
