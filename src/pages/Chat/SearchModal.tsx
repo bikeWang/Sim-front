@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Input, Typography, List, Avatar, Empty, Button, Spin } from 'antd';
 import { SearchOutlined, UserOutlined, TeamOutlined, CloseOutlined } from '@ant-design/icons';
+import { get, post } from '../../utils/request';
 import styles from './searchModal.module.css';
 
 interface SearchResult {
@@ -26,19 +27,8 @@ const SearchModal: React.FC<SearchModalProps> = ({ visible, onClose }) => {
   const fetchRecommendedFriends = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/users/recommended', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const data = await get('/api/users/recommended');
       
-      if (!response.ok) {
-        throw new Error('获取推荐用户失败');
-      }
-      
-      const data = await response.json();
       // 假设API返回格式: { users: [...], groups: [...] }
       const results: SearchResult[] = [
         ...data.users.map((user: any) => ({ id: user.id, name: user.name, type: 'user' as const })),
@@ -62,20 +52,8 @@ const SearchModal: React.FC<SearchModalProps> = ({ visible, onClose }) => {
 
     setIsSearching(true);
     try {
-      const response = await fetch('/api/users/search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({ keyword: searchValue.trim() }),
-      });
+      const data = await post('/api/users/search', { keyword: searchValue.trim() });
       
-      if (!response.ok) {
-        throw new Error('搜索失败');
-      }
-      
-      const data = await response.json();
       // 假设API返回格式: { users: [...], groups: [...] }
       const results: SearchResult[] = [
         ...data.users.map((user: any) => ({ id: user.id, name: user.name, type: 'user' as const })),

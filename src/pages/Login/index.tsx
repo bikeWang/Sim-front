@@ -3,6 +3,7 @@ import { Form, Input, Button, App } from 'antd';
 import { UserOutlined, LockOutlined, LaptopOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import { post } from '../../utils/request';
 
 import styles from './styles.module.css';
 
@@ -19,15 +20,8 @@ const Login: React.FC = () => {
   const onFinish = async (values: LoginForm) => {
     setLoading(true);
     try {
-      // 使用fetch从测试API获取是否登录
-      const response = await fetch('/api/user-info/user/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(values),
-      });
-      const data = await response.json();
+      // 使用request工具发送登录请求
+      const data = await post('/api/user-info/user/login', values);
       console.log(data);
       if (data.code === 200) {
         message.success({

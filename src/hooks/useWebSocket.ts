@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { App } from 'antd';
+import { get, post } from '../utils/request';
 
 interface Message {
   id: number;
@@ -513,15 +514,7 @@ export const useWebSocket = () => {
       const url=`/api/user-info/user/offline?userId=${userId}`
 
       // 调用后端下线API
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
-        },
-      });
-
-      const data = await response.json();
+      const data = await get(url);
       
       if (data.code === 200) {
         // 下线成功，断开WebSocket连接
@@ -677,15 +670,7 @@ export const useWebSocket = () => {
       const accessToken = localStorage.getItem('accessToken');
       const url = `/api/chat/getChatById?userId=${userId}&friendId=${contactId}`;
       
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
-        }
-      });
-      
-      const data = await response.json();
+      const data = await get(url);
       if (data.code === 200) {
         // 转换服务器返回的消息格式
         const historyMessages: Message[] = data.data.map((item: any) => ({
@@ -767,16 +752,7 @@ export const useWebSocket = () => {
       const userId=localStorage.getItem('userId');
       const accessToken = localStorage.getItem('accessToken');
       const url=`/api/chat/getAllChatBox?userId=${userId}`;
-      const response = await fetch(url,
-        {
-         method: 'GET', // 根据接口要求设置请求方法，GET/POST等
-         headers: {
-            'Content-Type': 'application/json', // 通常需要指定内容类型
-            'Authorization': accessToken ? `Bearer ${accessToken}` : '' // 拼接 Bearer 前缀
-         }
-        }
-      );
-      const data = await response.json();
+      const data = await get(url);
       console.log('获取联系人列表响应:', data);
       if (data.code === 200) {
         // 转换新的数据结构为应用所需的联系人格式
@@ -820,15 +796,7 @@ export const useWebSocket = () => {
       const accessToken = localStorage.getItem('accessToken');
       const url = `/api/user-info/user/getGroupUser?groupId=${groupId}`;
       
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
-        }
-      });
-      
-      const data = await response.json();
+      const data = await get(url);
       if (data.code === 200) {
         // 过滤掉password和avatar字段，只返回userId和userName
         const members = data.data.map((member: GroupMember) => ({

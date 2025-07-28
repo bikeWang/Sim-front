@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
-import { Drawer, Avatar, Input, List, Button, App } from 'antd';
+import { Drawer, Avatar, Input, List, Button, App, message } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
+import { del } from '../../utils/request';
 import styles from './detailDrawer.module.css';
 
 interface DetailDrawerProps {
@@ -16,9 +17,10 @@ interface DetailDrawerProps {
     members?: { userId: number; userName: string }[];
   } | null;
   onFetchGroupMembers?: (groupId: number) => Promise<{ userId: number; userName: string }[]>;
+  onDeleteFriend?: (friendId: number) => void; // 删除好友成功后的回调函数
 }
 
-const DetailDrawer: React.FC<DetailDrawerProps> = ({ visible, onClose, contact, onFetchGroupMembers }) => {
+const DetailDrawer: React.FC<DetailDrawerProps> = ({ visible, onClose, contact, onFetchGroupMembers, onDeleteFriend }) => {
   const { modal } = App.useApp();
   
   // 当群聊详情打开时，自动获取群成员列表
@@ -31,6 +33,31 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ visible, onClose, contact, 
   if (!contact) return null;
 
   const isPersonal = contact.type === 'personal';
+
+  // 删除好友API调用函数
+  const deleteFriend = async (operatorId: string, friendId: string) => {
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+        message.error('用户未登录');
+        return false;
+      }
+
+      const data = await del(`/api/user-info/friend/deleteFriend?userId=${operatorId}&friendId=${friendId}`);
+      
+      if (data.code === 200) {
+        message.success('删除好友成功');
+        return true;
+      } else {
+        message.error(data.message || '删除好友失败');
+        return false;
+      }
+    } catch (error) {
+      console.error('删除好友请求失败:', error);
+      message.error('网络错误，删除好友失败');
+      return false;
+    }
+  };
 
   const handleDelete = () => {
     modal.confirm({
@@ -48,9 +75,27 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ visible, onClose, contact, 
       centered: true,
       maskClosable: false,
       className: styles.deleteModal,
-      onOk: () => {
-        // 这里添加删除操作的处理逻辑
-        onClose();
+      onOk: async () => {
+        if (isPersonal) {
+          // 删除好友逻辑
+          const currentUserId = localStorage.getItem('userId');
+          if (!currentUserId) {
+            message.error('用户信息不完整');
+            return;
+          }
+          
+          const success = await deleteFriend(currentUserId, contact.id.toString());
+           if (success) {
+             // 调用回调函数刷新联系人列表
+             if (onDeleteFriend) {
+               onDeleteFriend(contact.id);
+             }
+             onClose();
+           }
+        } else {
+          // 删除群聊逻辑（暂时保持原有逻辑）
+          onClose();
+        }
       }
     });
   };
