@@ -331,6 +331,20 @@ export const useWebSocket = () => {
             console.log('解析到的userId:', userId, 'status:', status);
             
             if (userId !== undefined && status !== undefined) {
+              // 先获取联系人信息用于显示提示
+              const targetContact = contacts.find(c => c.type === 'personal' && c.id.toString() === userId);
+              
+              // 检查状态是否真的发生了变化，避免重复提示
+              if (targetContact && targetContact.online !== status) {
+                const userName = targetContact.name || `用户${userId}`;
+                
+                // 显示状态变更提示（只在状态真正改变时显示一次）
+                if (status) {
+                  message.info(`${userName} 已上线`);
+                } else {
+                  message.info(`${userName} 已下线`);
+                }
+              }
               
               // 更新联系人列表中对应用户的在线状态
               setContacts(prevContacts => {
@@ -345,17 +359,6 @@ export const useWebSocket = () => {
                 });
                 
                 console.log('更新后的联系人列表:', updatedContacts);
-                
-                // 在更新联系人状态后显示提示
-                const contact = prevContacts.find(c => c.type === 'personal' && c.id.toString() === userId);
-                const userName = contact?.name || `用户${userId}`;
-                
-                if (status) {
-                  message.info(`${userName} 已上线`);
-                } else {
-                  message.info(`${userName} 已下线`);
-                }
-                
                 return updatedContacts;
               });
             } else {
