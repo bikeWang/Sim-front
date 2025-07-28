@@ -35,7 +35,7 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ visible, onClose, contact, 
   const isPersonal = contact.type === 'personal';
 
   // 删除好友API调用函数
-  const deleteFriend = async (operatorId: string, friendId: string) => {
+  const deleteFriend = async (operatorId: number, friendId: number) => {
     try {
       const accessToken = localStorage.getItem('accessToken');
       if (!accessToken) {
