@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Input, Typography, List, Avatar, Empty, Button, Spin } from 'antd';
+import { Input, Typography, List, Avatar, Empty, Button, Spin, message } from 'antd';
 import { SearchOutlined, UserOutlined, TeamOutlined, CloseOutlined } from '@ant-design/icons';
 import { get, post } from '../../utils/request';
 import styles from './searchModal.module.css';
@@ -13,28 +13,94 @@ interface SearchResult {
 interface SearchModalProps {
   visible: boolean;
   onClose: () => void;
+  onSendWebSocketMessage?: (message: any) => void;
 }
 
 const { Text } = Typography;
 
-const SearchModal: React.FC<SearchModalProps> = ({ visible, onClose }) => {
+const SearchModal: React.FC<SearchModalProps> = ({ visible, onClose, onSendWebSocketMessage }) => {
   const [searchValue, setSearchValue] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
+  // 处理添加好友请求
+  const handleAddFriend = (friendId: number) => {
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      message.error('请先登录');
+      return;
+    }
+
+    const wsMessage = {
+      action: 6,
+      chatMsg: {
+        senderId: parseInt(userId),
+        receiverId: friendId,
+        type: 3
+      }
+    };
+
+    if (onSendWebSocketMessage) {
+      onSendWebSocketMessage(wsMessage);
+      message.success('好友请求已发送');
+      console.log('发送添加好友请求:', wsMessage);
+    } else {
+      message.error('WebSocket连接异常');
+    }
+  };
+
+  // 处理加入群聊请求
+  const handleJoinGroup = (groupId: number) => {
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      message.error('请先登录');
+      return;
+    }
+
+    const wsMessage = {
+      action: 5,
+      chatMsg: {
+        senderId: parseInt(userId),
+        groupId: groupId,
+        type: 3
+      }
+    };
+
+    if (onSendWebSocketMessage) {
+      onSendWebSocketMessage(wsMessage);
+      message.success('群聊申请已发送');
+      console.log('发送加入群聊请求:', wsMessage);
+    } else {
+      message.error('WebSocket连接异常');
+    }
+  };
+
   // 获取推荐好友
   const fetchRecommendedFriends = async () => {
     setIsLoading(true);
     try {
-      const data = await get('/api/users/recommended');
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        console.error('用户未登录');
+        setSearchResults([]);
+        return;
+      }
       
-      // 假设API返回格式: { users: [...], groups: [...] }
-      const results: SearchResult[] = [
-        ...data.users.map((user: any) => ({ id: user.id, name: user.name, type: 'user' as const })),
-        ...data.groups.map((group: any) => ({ id: group.id, name: group.name, type: 'group' as const }))
-      ];
-      setSearchResults(results);
+      const data = await get(`/api/user-info/friend/findRecommendFriend?userId=${userId}`);
+      
+      // 根据新的API返回格式处理数据: { code: 200, msg: "OK", data: [...] }
+      if (data.code === 200 && data.data) {
+        const results: SearchResult[] = data.data.map((user: any) => ({
+          id: user.userId,
+          name: user.userName,
+          type: 'user' as const
+        }));
+        setSearchResults(results);
+      } else {
+        console.error('获取推荐好友失败:', data.msg);
+        setSearchResults([]);
+      }
     } catch (error) {
       console.error('获取推荐好友失败:', error);
       setSearchResults([]);
@@ -52,14 +118,48 @@ const SearchModal: React.FC<SearchModalProps> = ({ visible, onClose }) => {
 
     setIsSearching(true);
     try {
-      const data = await post('/api/users/search', { keyword: searchValue.trim() });
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        console.error('用户未登录');
+        setSearchResults([]);
+        return;
+      }
+
+      // 判断输入内容类型：纯数字为1，其他为2
+      const searchContent = searchValue.trim();
+      const type = /^\d+$/.test(searchContent) ? 1 : 2;
+
+      const data = await get(`/api/user-info/user/getSearchInfo?userId=${userId}&type=${type}&searchName=${encodeURIComponent(searchContent)}`);
       
-      // 假设API返回格式: { users: [...], groups: [...] }
-      const results: SearchResult[] = [
-        ...data.users.map((user: any) => ({ id: user.id, name: user.name, type: 'user' as const })),
-        ...data.groups.map((group: any) => ({ id: group.id, name: group.name, type: 'group' as const }))
-      ];
-      setSearchResults(results);
+      // 根据新的API返回格式处理数据，过滤掉已添加的项目
+      if (data.code === 200 && data.data) {
+        const results: SearchResult[] = data.data
+          .filter((item: any) => item.type === false) // 只渲染type为false的项目
+          .map((item: any) => {
+            if (item.userVo && item.userVo.user) {
+              // 用户类型
+              return {
+                id: item.userVo.user.userId,
+                name: item.userVo.user.userName,
+                type: 'user' as const
+              };
+            } else if (item.group) {
+              // 群组类型
+              return {
+                id: item.group.groupId,
+                name: item.group.groupName,
+                type: 'group' as const
+              };
+            }
+            return null;
+          })
+          .filter(Boolean); // 过滤掉null值
+        
+        setSearchResults(results);
+      } else {
+        console.error('搜索失败:', data.msg);
+        setSearchResults([]);
+      }
     } catch (error) {
       console.error('搜索失败:', error);
       setSearchResults([]);
@@ -161,6 +261,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ visible, onClose }) => {
                            type="primary"
                            size="small"
                            className={styles.addButton}
+                           onClick={() => handleAddFriend(item.id)}
                          >
                            添加好友
                          </Button>
@@ -189,6 +290,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ visible, onClose }) => {
                            type="primary"
                            size="small"
                            className={styles.addButton}
+                           onClick={() => handleJoinGroup(item.id)}
                          >
                            加入群聊
                          </Button>

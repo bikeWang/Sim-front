@@ -5,18 +5,19 @@ import styles from './notificationDropdown.module.css';
 
 interface NotificationItem {
   id: number;
-  type: 'friend' | 'group' | 'group_invite';
+  type: 'friend' | 'group' | 'group_invite' | 'group_join_request' | 'friend_request';
   title: string;
   description: string;
   timestamp: string;
   groupName?: string;
   senderId?: number;
+  userName?: string;
 }
 
 interface NotificationDropdownProps {
   notifications: NotificationItem[];
-  onAccept?: (id: number, type: 'friend' | 'group' | 'group_invite') => void;
-  onReject?: (id: number, type: 'friend' | 'group' | 'group_invite') => void;
+  onAccept?: (id: number, type: 'friend' | 'group' | 'group_invite' | 'group_join_request' | 'friend_request') => void;
+  onReject?: (id: number, type: 'friend' | 'group' | 'group_invite' | 'group_join_request' | 'friend_request') => void;
   onClear?: (id: number) => void;
   onClearAll?: () => void;
 }
@@ -38,6 +39,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   const friendRequests = sortedNotifications.filter(item => item.type === 'friend');
   const groupRequests = sortedNotifications.filter(item => item.type === 'group');
   const groupInvites = sortedNotifications.filter(item => item.type === 'group_invite');
+  const groupJoinRequests = sortedNotifications.filter(item => item.type === 'group_join_request');
+  const friendRequestNotifications = sortedNotifications.filter(item => item.type === 'friend_request');
   const hasNotifications = sortedNotifications.length > 0;
 
   const dropdownContent = (
@@ -78,6 +81,60 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
           />
         </div>
       )}
+      
+      {groupJoinRequests.length > 0 && (
+         <div className={styles.notificationSection}>
+           <div className={styles.sectionHeader}>
+             <TeamOutlined />
+             <Text strong>群聊加入请求</Text>
+           </div>
+           <List
+             dataSource={groupJoinRequests}
+             renderItem={item => (
+               <List.Item className={styles.notificationItem}>
+                 <div className={styles.notificationContent}>
+                   <Text strong>{item.title}</Text>
+                   <Text type="secondary">{item.description}</Text>
+                   <Text type="secondary" className={styles.timestamp}>
+                     {new Date(item.timestamp).toLocaleString()}
+                   </Text>
+                 </div>
+                 <div className={styles.actionButtons}>
+                   {onAccept && <a onClick={() => onAccept(item.id, 'group_join_request')}>同意</a>}
+                   {onReject && <a onClick={() => onReject(item.id, 'group_join_request')}>拒绝</a>}
+                 </div>
+               </List.Item>
+             )}
+           />
+         </div>
+       )}
+       
+       {friendRequestNotifications.length > 0 && (
+         <div className={styles.notificationSection}>
+           <div className={styles.sectionHeader}>
+             <UserAddOutlined />
+             <Text strong>好友请求</Text>
+           </div>
+           <List
+             dataSource={friendRequestNotifications}
+             renderItem={item => (
+               <List.Item className={styles.notificationItem}>
+                 <div className={styles.notificationContent}>
+                   <Text strong>{item.title}</Text>
+                   <Text type="secondary">{item.description}</Text>
+                   <Text type="secondary" className={styles.timestamp}>
+                     {new Date(item.timestamp).toLocaleString()}
+                   </Text>
+                 </div>
+                 <div className={styles.actionButtons}>
+                   {onAccept && <a onClick={() => onAccept(item.id, 'friend_request')}>同意</a>}
+                   {onReject && <a onClick={() => onReject(item.id, 'friend_request')}>拒绝</a>}
+                 </div>
+               </List.Item>
+             )}
+           />
+         </div>
+       )}
       
       {friendRequests.length > 0 && (
         <div className={styles.notificationSection}>

@@ -28,12 +28,13 @@ interface Contact {
 
 interface NotificationItem {
   id: number;
-  type: 'group_invite';
+  type: 'group_invite' | 'group_join_request' | 'friend_request';
   title: string;
   description: string;
   timestamp: string;
   groupName?: string;
   senderId?: number;
+  userName?: string;
 }
 
 interface GroupMember {
@@ -367,7 +368,48 @@ export const useWebSocket = () => {
             }
             break;
           case 4: // 通知
-            if (wsMessage.data) {
+            console.log('收到action为4的通知消息:', data);
+            
+            // 根据type判断通知类型
+            if (data.type === 1) {
+              // type为1：群聊通知
+              if (data.groupId && data.groupName && data.senderId && data.userName) {
+                const newNotification: NotificationItem = {
+                  id: Date.now(),
+                  type: 'group_join_request',
+                  title: '群聊加入请求',
+                  description: `用户 ${data.userName} 请求加入群 ${data.groupName}`,
+                  timestamp: new Date().toISOString(),
+                  groupName: data.groupName,
+                  senderId: data.senderId,
+                  userName: data.userName
+                };
+                
+                // 新通知永远在前面
+                setNotifications(prev => [newNotification, ...prev]);
+                
+                console.log('创建群聊加入请求通知:', newNotification);
+              }
+            } else if (data.type === 2) {
+              // type为2：好友请求
+              if (data.senderId && data.userName) {
+                const newNotification: NotificationItem = {
+                  id: Date.now(),
+                  type: 'friend_request',
+                  title: '好友请求',
+                  description: `用户 ${data.userName} 请求添加您为好友`,
+                  timestamp: new Date().toISOString(),
+                  senderId: data.senderId,
+                  userName: data.userName
+                };
+                
+                // 新通知永远在前面
+                setNotifications(prev => [newNotification, ...prev]);
+                
+                console.log('创建好友请求通知:', newNotification);
+              }
+            } else if (wsMessage.data) {
+              // 兼容其他类型的通知
               message.info(wsMessage.data.content || wsMessage.data.message);
             }
             break;
@@ -570,6 +612,17 @@ export const useWebSocket = () => {
 
     console.log('发送创建群聊消息:', messageData);
     ws.current.send(JSON.stringify(messageData));
+  }, [message]);
+
+  // 通用的发送WebSocket消息方法
+  const sendWebSocketMessage = useCallback((wsMessage: any) => {
+    if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
+      message.error('未连接到聊天服务器');
+      return;
+    }
+
+    console.log('发送WebSocket消息:', wsMessage);
+    ws.current.send(JSON.stringify(wsMessage));
   }, [message]);
 
   const sendMessage = useCallback((content: string, receiverId: number, type: 1 | 2 = 1) => {
@@ -841,6 +894,7 @@ export const useWebSocket = () => {
     contactMessages, // 所有联系人的消息Map
     currentContactId, // 当前选中的联系人ID
     sendMessage,
+    sendWebSocketMessage, // 通用的发送WebSocket消息方法
     fetchHistoryMessages,
     setSelectedContact, // 设置选中联系人并加载历史消息
     fetchContacts,

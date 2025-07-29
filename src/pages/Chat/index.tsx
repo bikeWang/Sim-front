@@ -49,6 +49,7 @@ const Chat: React.FC = () => {
     messages,
     currentContactId,
     sendMessage,
+    sendWebSocketMessage,
     setSelectedContact: setWebSocketSelectedContact,
     fetchContacts,
     contacts,
@@ -86,12 +87,28 @@ const Chat: React.FC = () => {
     fetchContacts();
   }, [fetchContacts]);
 
-  const handleAcceptRequest = (id: number, type: 'friend' | 'group') => {
-    console.log(`接受${type === 'friend' ? '好友' : '群聊'}请求:`, id);
+  const handleAcceptRequest = (id: number, type: 'friend' | 'group' | 'group_invite' | 'group_join_request' | 'friend_request') => {
+    if (type === 'group_join_request') {
+      console.log('同意群聊加入请求:', id);
+      // TODO: 实现同意群聊加入请求的逻辑
+    } else if (type === 'friend_request') {
+      console.log('同意好友请求:', id);
+      // TODO: 实现同意好友请求的逻辑
+    } else {
+      console.log(`接受${type === 'friend' ? '好友' : '群聊'}请求:`, id);
+    }
   };
 
-  const handleRejectRequest = (id: number, type: 'friend' | 'group') => {
-    console.log(`拒绝${type === 'friend' ? '好友' : '群聊'}请求:`, id);
+  const handleRejectRequest = (id: number, type: 'friend' | 'group' | 'group_invite' | 'group_join_request' | 'friend_request') => {
+    if (type === 'group_join_request') {
+      console.log('拒绝群聊加入请求:', id);
+      // TODO: 实现拒绝群聊加入请求的逻辑
+    } else if (type === 'friend_request') {
+      console.log('拒绝好友请求:', id);
+      // TODO: 实现拒绝好友请求的逻辑
+    } else {
+      console.log(`拒绝${type === 'friend' ? '好友' : '群聊'}请求:`, id);
+    }
   };
 
   // 处理删除好友
@@ -373,6 +390,7 @@ const Chat: React.FC = () => {
       <SearchModal
         visible={searchModalVisible}
         onClose={() => setSearchModalVisible(false)}
+        onSendWebSocketMessage={sendWebSocketMessage}
       />
       <CreateGroupModal
         visible={createGroupModalVisible}
