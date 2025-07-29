@@ -899,6 +899,7 @@ export const useWebSocket = () => {
     setSelectedContact, // 设置选中联系人并加载历史消息
     fetchContacts,
     contacts,
+    setContacts, // 设置联系人列表
     logout, // 用户下线功能
     fetchGroupMembers, // 获取群成员列表
     clearNewMessageStatus, // 清除新消息状态

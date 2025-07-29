@@ -53,6 +53,7 @@ const Chat: React.FC = () => {
     setSelectedContact: setWebSocketSelectedContact,
     fetchContacts,
     contacts,
+    setContacts,
     logout: webSocketLogout,
     fetchGroupMembers,
     clearNewMessageStatus,
@@ -92,8 +93,50 @@ const Chat: React.FC = () => {
       console.log('同意群聊加入请求:', id);
       // TODO: 实现同意群聊加入请求的逻辑
     } else if (type === 'friend_request') {
-      console.log('同意好友请求:', id);
-      // TODO: 实现同意好友请求的逻辑
+      console.log('处理好友请求同意:', { type, notificationId: id });
+      
+      // 查找对应的通知以获取senderId
+      const notification = notifications.find(n => n.id === id);
+      if (notification && notification.senderId) {
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+          // 发送同意好友请求的WebSocket消息
+          const acceptMessage = {
+            action: 6,
+            chatMsg: {
+              status: true,
+              senderId: parseInt(userId),
+              receiverId: notification.senderId,
+              type: 1
+            }
+          };
+          
+          console.log('发送同意好友请求消息:', acceptMessage);
+          sendWebSocketMessage(acceptMessage);
+          
+          // 将新好友添加到联系人列表
+          const newContact: Contact = {
+            id: notification.senderId,
+            name: notification.userName || `用户${notification.senderId}`,
+            lastMessage: '',
+            unread: 0,
+            online: false, // 默认离线状态，后续会通过WebSocket更新
+            type: 'personal'
+          };
+          
+          // 检查是否已存在该联系人，避免重复添加
+           const existingContact = contacts.find(c => c.id === notification.senderId && c.type === 'personal');
+           if (!existingContact) {
+             setContacts(prev => [...prev, newContact]);
+             console.log('新好友已添加到联系人列表:', newContact);
+           } else {
+             console.log('联系人已存在，跳过添加:', existingContact);
+           }
+           
+           // 清除对应的通知
+           clearNotification(id);
+        }
+      }
     } else {
       console.log(`接受${type === 'friend' ? '好友' : '群聊'}请求:`, id);
     }
@@ -104,8 +147,31 @@ const Chat: React.FC = () => {
       console.log('拒绝群聊加入请求:', id);
       // TODO: 实现拒绝群聊加入请求的逻辑
     } else if (type === 'friend_request') {
-      console.log('拒绝好友请求:', id);
-      // TODO: 实现拒绝好友请求的逻辑
+      console.log('处理好友请求拒绝:', { type, notificationId: id });
+      
+      // 查找对应的通知以获取senderId
+      const notification = notifications.find(n => n.id === id);
+      if (notification && notification.senderId) {
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+          // 发送拒绝好友请求的WebSocket消息
+          const rejectMessage = {
+            action: 6,
+            chatMsg: {
+              status: false,
+              senderId: parseInt(userId),
+              receiverId: notification.senderId,
+              type: 1
+            }
+          };
+          
+          console.log('发送拒绝好友请求消息:', rejectMessage);
+           sendWebSocketMessage(rejectMessage);
+           
+           // 清除对应的通知
+           clearNotification(id);
+        }
+      }
     } else {
       console.log(`拒绝${type === 'friend' ? '好友' : '群聊'}请求:`, id);
     }
