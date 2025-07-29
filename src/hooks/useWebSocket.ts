@@ -408,6 +408,47 @@ export const useWebSocket = () => {
                 
                 console.log('创建好友请求通知:', newNotification);
               }
+            } else if (data.type === 3) {
+              // type为3：好友请求响应（同意/拒绝后的反馈）
+              if (data.senderId && data.userName && typeof data.status === 'boolean') {
+                console.log('收到好友请求响应:', {
+                  senderId: data.senderId,
+                  userName: data.userName,
+                  status: data.status
+                });
+                
+                // 如果status为true，表示对方同意了好友请求，将其添加到联系人列表
+                if (data.status === true) {
+                  const newContact: Contact = {
+                    id: data.senderId,
+                    name: data.userName,
+                    lastMessage: '',
+                    unread: 0,
+                    online: data.status, // 根据status设置在线状态
+                    type: 'personal'
+                  };
+                  
+                  // 检查是否已存在该联系人，避免重复添加
+                  setContacts(prevContacts => {
+                    const existingContact = prevContacts.find(c => c.id === data.senderId && c.type === 'personal');
+                    if (!existingContact) {
+                      console.log('新好友已添加到联系人列表:', newContact);
+                      return [...prevContacts, newContact];
+                    } else {
+                      console.log('联系人已存在，更新在线状态:', existingContact);
+                      return prevContacts.map(contact => 
+                        contact.id === data.senderId && contact.type === 'personal'
+                          ? { ...contact, online: data.status }
+                          : contact
+                      );
+                    }
+                  });
+                  
+                  message.success(`${data.userName} 已同意您的好友请求`);
+                } else {
+                  message.info(`${data.userName} 拒绝了您的好友请求`);
+                }
+              }
             } else if (wsMessage.data) {
               // 兼容其他类型的通知
               message.info(wsMessage.data.content || wsMessage.data.message);
